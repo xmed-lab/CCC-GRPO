@@ -8,4 +8,4 @@ Created by [Du Yao](https://duyao-art.github.io/), [Song Shanshan](https://schol
 
 ## Overview of CCC-GRPO
 
-![intro](figures/MLLM_Numerical_Fig3.pdf)
+![intro](figures/MLLM_Numerical_Fig3.png)
