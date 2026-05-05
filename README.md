@@ -38,3 +38,19 @@ Right: CCC-GRPO introduces batch-level, distributionaware relational supervision
 We reconstruct all datasets into a unified DIR benchmark tailored for MLLMs, where models are required to generate continuous values via token-based decoding under naturally skewed training distributions. In total, the benchmark covers over 129K samples. 
 
 ![intro](figures/MLLM_Numerical_3.png)
+
+
+## Citation
+If you find this codebase helpful, please consider to cite:
+
+```
+@misc{du2026injectingdistributionalawarenessmllms,
+      title={Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression}, 
+      author={Yao Du and Shanshan Li and Xiaomeng Li},
+      year={2026},
+      eprint={2605.01402},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2605.01402}, 
+}
+```
