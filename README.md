@@ -40,6 +40,11 @@ We reconstruct all datasets into a unified DIR benchmark tailored for MLLMs, whe
 ![intro](figures/MLLM_Numerical_3.png)
 
 
+## [Awesome Numerical Understanding Papers](https://github.com/duyao-art/Awesome-Numerical-Understanding-Papers)
+
+I have created a curated repository of recent advances in numerical reasoning for large language models.
+
+
 ## Citation
 If you find this codebase helpful, please consider to cite:
 
