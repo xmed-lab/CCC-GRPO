@@ -51,7 +51,7 @@ If you find this codebase helpful, please consider to cite:
 ```
 @misc{du2026injectingdistributionalawarenessmllms,
       title={Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression}, 
-      author={Yao Du and Shanshan Li and Xiaomeng Li},
+      author={Yao Du and Shanshan Song and Xiaomeng Li},
       year={2026},
       eprint={2605.01402},
       archivePrefix={arXiv},
