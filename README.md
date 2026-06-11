@@ -1,18 +1,58 @@
 # CCC-GRPO
 
-Official code for the ICML 2026 paper:
+Official implementation of the ICML 2026 paper:
 
 [**Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression**](https://arxiv.org/abs/2605.01402)
 
+[[Paper]](https://arxiv.org/abs/2605.01402) | [[Dataset]](https://huggingface.co/datasets/ChanganYao/DeepImbalancedRegressionForMLLMs)
 
-## What Is New
 
-- The first DIR (Deep Imbalanced Regression) benchmark for MLLMs across four datasets.
-- A batch-level CCC reward for long-tailed numerical prediction.
+---
+
+## Highlights
+
+- **First DIR benchmark for MLLMs**  
+  We introduce a deep imbalanced regression benchmark for multimodal large language models across four datasets.
+
+- **Distribution-aware reinforcement learning**  
+  CCC-GRPO optimizes a batch-level CCC reward to improve numerical prediction under long-tailed target distributions.
+
+- **No additional reward model required**  
+  The CCC reward is simple, lightweight, bounded, and can be directly integrated into GRPO-style optimization.
+
+- **Better long-tailed numerical prediction**  
+  CCC-GRPO improves regression performance by encouraging both point-wise accuracy and global distributional alignment.
+
+---
+
+## Method
+
+Most existing MLLM regression methods treat numerical prediction as an independent point-wise task. However, in long-tailed regression, this often leads to biased predictions toward frequent target regions.
+
+CCC-GRPO addresses this issue by introducing a batch-level reward based on the Concordance Correlation Coefficient (CCC):
+
+$$
+\rho_c = \frac{2\sigma_{xy}}{\sigma_x^2 + \sigma_y^2 + (\mu_x - \mu_y)^2}
+$$
+
+where \(x\) and \(y\) denote the predicted and ground-truth values, respectively.
+
+Compared with point-wise losses such as MAE or MSE, CCC jointly considers:
+
+- correlation between predictions and labels,
+- variance consistency,
+- mean alignment.
+
+This makes CCC particularly suitable for long-tailed numerical prediction, where models need to capture not only individual labels but also the overall target distribution.
+
+---
 
 ## CCC Reward
 
-Simpleset CCC Reward Implementation in [qwen_module.py](/home/ydubf/public_release_plan/staging/github/CCC-GRPO/src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py:6106).
+The simplest CCC reward implementation can be found in:
+
+```text
+src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py
 
 ```python
 def age_reward_global_ccc(completions, solution, **kwargs):
