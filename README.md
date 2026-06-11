@@ -117,6 +117,13 @@ We evaluate MLLMs on four deep imbalanced regression datasets:
 
 The processed datasets are available at: [DIR_MLLM](https://huggingface.co/datasets/ChanganYao/DeepImbalancedRegressionForMLLMs⁠)
 
+Scripts:
+
+- `bash scripts/train_ccc_grpo.sh agedb`
+- `bash scripts/train_ccc_grpo.sh imdb_movie`
+- `bash scripts/train_ccc_grpo.sh boneage`
+- `bash scripts/train_ccc_grpo.sh imdb_wiki`
+- `bash scripts/eval_ccc_grpo.sh agedb /path/to/checkpoint-100 100`
 
 ---
 
@@ -134,7 +141,7 @@ CCC-GRPO can be trained by specifying the proposed CCC reward function during GR
 A typical training command is:
 
 ```bash
-bash scripts/train_ccc_grpo.sh
+bash scripts/train_ccc_grpo.sh agedb
 ```
 
 ---
@@ -144,7 +151,7 @@ bash scripts/train_ccc_grpo.sh
 After training, the model can be evaluated on the DIR benchmark datasets with:
 
 ```bash
-bash scripts/eval.sh
+bash scripts/eval_ccc_grpo.sh agedb /path/to/checkpoint-100 100
 ```
 
 

@@ -28,6 +28,7 @@ parser.add_argument("--run_name", type=str, required=True)
 parser.add_argument("--dataset", type=str, required=True)
 parser.add_argument("--data_file", type=str, required=True)
 parser.add_argument("--output_dir", type=str, default="./logs")
+parser.add_argument("--model_path", type=str, default=None)
 
 args = parser.parse_args()
 
@@ -36,6 +37,7 @@ RUN_NAME = args.run_name
 DATASET = args.dataset
 DATA_FILE = args.data_file
 OUTPUT_DIR = args.output_dir
+MODEL_PATH_ARG = args.model_path
 
 # ===============================================================
 
@@ -203,7 +205,7 @@ def run_evaluation(step):
 
     print(f"\n=== Evaluating checkpoint-{step} ===")
 
-    MODEL_PATH = f"/ssong/share/sss_weights/vlm-r1/{RUN_NAME}/checkpoint-{step}"
+    MODEL_PATH = MODEL_PATH_ARG or f"/ssong/share/sss_weights/vlm-r1/{RUN_NAME}/checkpoint-{step}"
     # OUTPUT_PATH = f"./logs/age_pred_results_{DATASET}_{RUN_NAME}_{step}.json"
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     OUTPUT_PATH = os.path.join(
