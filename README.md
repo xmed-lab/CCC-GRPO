@@ -1,55 +1,119 @@
 # CCC-GRPO
 
-This repository contains the public code release for the ICML 2026 paper:
+Official code release for the ICML 2026 paper:
 
 **Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression**
 
-The implementation is built on top of `VLM-R1`. Our main contribution is the adaptation from generic VLM-R1 training to deep imbalanced regression in MLLMs through:
+[[arXiv]](https://arxiv.org/abs/2605.01402)
 
-- task-specific regression prompts
-- batch-level `CCC`-style reward design
-- benchmark construction for four MLLM DIR datasets
+## Overview
 
-## Included Scope
+We study **deep imbalanced regression (DIR)** in multimodal large language models. Standard MLLM training pipelines treat numerical prediction either as token classification or as point-wise scalar regression, which often leads to **regression-to-the-mean** under long-tailed continuous targets.
 
-This public release only includes the paper datasets:
+CCC-GRPO addresses this issue by injecting **distributional awareness** into reinforcement learning for MLLMs. Instead of rewarding each sample independently, our method introduces **batch-level relational supervision** so that the model is optimized not only for individual correctness, but also for preserving the global structure of the target distribution.
 
-- `AgeDB-DIR`
-- `IMDB-WIKI-DIR`
-- `IMDB-Movie-DIR`
-- `BoneAge-DIR`
+## Main Contributions
 
-It does **not** include unrelated historical experiments for gaze, fundus, BIWI, MPII, EchoNet, InternVL, or large hyperparameter sweep scripts.
+- We present the **first systematic DIR benchmark for MLLMs**, covering four naturally imbalanced regression datasets: `AgeDB-DIR`, `IMDB-WIKI-DIR`, `IMDB-Movie-DIR`, and `BoneAge-DIR`.
+- We show that **point-wise supervision is insufficient** for long-tailed numerical prediction in MLLMs.
+- We propose **CCC-GRPO**, a distribution-aware reinforcement learning objective that introduces **batch-level concordance structure** into reward design.
+- We provide a practical MLLM training pipeline for DIR based on `VLM-R1`, together with benchmark annotations and evaluation code.
+
+## Method Intuition
+
+The key idea is simple:
+
+- standard SFT or regression reward treats each prediction independently
+- DIR requires preserving **relative ordering** and **global distribution shape**
+- CCC-GRPO therefore uses a **batch-level reward** instead of only per-sample correctness
+
+In other words, the model should not only predict a plausible number for one image, but also produce a set of predictions whose structure agrees with the target distribution.
+
+## A Simple Reward Example
+
+Below is a compact example showing the kind of distribution-aware supervision used in our codebase:
+
+```python
+def compute_ce_dis_loss(self, logits, y, d):
+    list_target = list(range(d))
+    target = torch.Tensor(list_target).to("cuda:0")
+    target = torch.unsqueeze(target, 1)
+    ls_weight = []
+
+    for i in range(len(y)):
+        label_inv_ranks = torch.abs(y[i] - target).transpose(0, 1)
+        label_inv_ranks_norm = (
+            torch.abs(y[i] - target).transpose(0, 1)
+            / torch.sum(label_inv_ranks, dim=1)
+            * (d - 1)
+        )
+        label_inv_ranks_norm = torch.squeeze(label_inv_ranks_norm, 0)
+        label_inv_ranks_norm[y[i]] = 1.0
+        ls_label_inv_ranks_norm = label_inv_ranks_norm.detach().cpu().numpy().tolist()
+        ls_weight.append(ls_label_inv_ranks_norm)
+
+    weight = torch.Tensor(ls_weight).to("cuda:0")
+    logits_weight = logits * weight
+    loss = self.ce_loss_func(logits_weight, y)
+    return loss
+```
+
+This snippet illustrates the central idea: predictions are not treated as isolated point targets. Instead, the loss is shaped by the **relative position of labels in the target space**, which encourages more distribution-sensitive optimization.
+
+## Benchmark Summary
+
+| Dataset | Train | Test | Target | Domain |
+| --- | ---: | ---: | --- | --- |
+| AgeDB-DIR | 12,208 | 2,140 | Age (years) | In-the-wild faces |
+| IMDB-WIKI-DIR | 81,911 | 11,016 | Age (years) | Web-scale faces |
+| IMDB-Movie-DIR | 7,049 | 1,203 | IMDb movie score | Movie posters |
+| BoneAge-DIR | 12,528 | 1,508 | Bone maturity (months) | Medical imaging |
 
 ## Repository Structure
 
 - `src/open-r1-multimodal/src/open_r1/grpo_jsonl.py`
-  - main GRPO training entry for json/jsonl regression data
+  - training entry for GRPO on regression-style `json/jsonl` data
 - `src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py`
-  - prompt and reward implementation used for the regression tasks
+  - prompt construction and reward implementation
 - `src/eval/run_eval_single_step.py`
   - evaluation entry
 - `weights/`
-  - target-bin weighting files used in the experiments
+  - distribution-related weighting files used by the released benchmarks
 - `data/`
-  - final train/test annotations and dataset preparation metadata for the four paper datasets
+  - released annotations and dataset construction metadata
 
 ## Dataset Release
 
-The image assets and final public annotations are released on Hugging Face:
+The benchmark data are released at:
 
-- `ChanganYao/DeepImbalancedRegressionForMLLMs`
+- `https://huggingface.co/datasets/ChanganYao/DeepImbalancedRegressionForMLLMs`
 
-The annotation files in this repository use relative paths such as `images/...`. They are intended to match each dataset subset in the Hugging Face release.
+Each subset contains:
 
-## Benchmark Summary
+- an `images/` folder
+- the released train annotation file
+- the released balanced test annotation file
 
-| Dataset | Train | Test | Target |
-| --- | ---: | ---: | --- |
-| AgeDB-DIR | 12,208 | 2,140 | Age (years) |
-| IMDB-WIKI-DIR | 81,911 | 11,016 | Age (years) |
-| IMDB-Movie-DIR | 7,049 | 1,203 | IMDb movie score |
-| BoneAge-DIR | 12,528 | 1,508 | Bone maturity (months) |
+## Quick Start
+
+The simplest way to understand the release is:
+
+1. prepare a dataset in the same `json/jsonl` format as the files in `data/`
+2. use `grpo_jsonl.py` as the training entry
+3. use `qwen_module.py` for the prompt and reward logic
+4. use `run_eval_single_step.py` for evaluation
+
+Minimal file-level entry points:
+
+```bash
+python src/open-r1-multimodal/src/open_r1/grpo_jsonl.py
+python src/eval/run_eval_single_step.py
+```
+
+If you want to adapt the method to a new regression task, the two places to read first are:
+
+- `src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py`
+- `data/`
 
 ## Figures
 
