@@ -2,19 +2,17 @@
 
 Official code for the ICML 2026 paper:
 
-**Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression**
+[**Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression**](https://arxiv.org/abs/2605.01402)
 
-[[arXiv]](https://arxiv.org/abs/2605.01402)
 
 ## What Is New
 
-- The first DIR benchmark for MLLMs across four datasets.
+- The first DIR (Deep Imbalanced Regression) benchmark for MLLMs across four datasets.
 - A batch-level CCC reward for long-tailed numerical prediction.
-- A simple GRPO training pipeline for multimodal regression.
 
 ## CCC Reward
 
-The released code uses `global_rank -> age_reward_global_ccc` in [qwen_module.py](/home/ydubf/public_release_plan/staging/github/CCC-GRPO/src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py:6106).
+Simpleset CCC Reward Implementation in [qwen_module.py](/home/ydubf/public_release_plan/staging/github/CCC-GRPO/src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py:6106).
 
 ```python
 def age_reward_global_ccc(completions, solution, **kwargs):
@@ -83,24 +81,8 @@ def age_reward_global_ccc(completions, solution, **kwargs):
 | IMDB-Movie-DIR | 7,049 | 1,203 | IMDb movie score |
 | BoneAge-DIR | 12,528 | 1,508 | Bone maturity (months) |
 
-## Minimal Usage
 
-Core files:
-
-- [grpo_jsonl.py](/home/ydubf/public_release_plan/staging/github/CCC-GRPO/src/open-r1-multimodal/src/open_r1/grpo_jsonl.py:1)
-- [qwen_module.py](/home/ydubf/public_release_plan/staging/github/CCC-GRPO/src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py:1)
-- [run_eval_single_step.py](/home/ydubf/public_release_plan/staging/github/CCC-GRPO/src/eval/run_eval_single_step.py:1)
-
-Released data:
-
-- `AgeDB-DIR`
-- `IMDB-WIKI-DIR`
-- `IMDB-Movie-DIR`
-- `BoneAge-DIR`
-
-Dataset:
-
-- `https://huggingface.co/datasets/ChanganYao/DeepImbalancedRegressionForMLLMs`
+[Dataset:](https://huggingface.co/datasets/ChanganYao/DeepImbalancedRegressionForMLLMs)
 
 ## Figures
 
