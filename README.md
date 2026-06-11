@@ -1,61 +1,78 @@
 # CCC-GRPO
 
-This repository contains PyTorch implementation of "[Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression (ICML 2026)](https://arxiv.org/abs/2605.01402)".
+This repository contains the public code release for the ICML 2026 paper:
 
+**Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression**
 
-Created by [Du Yao](https://duyao-art.github.io/), [Song Shanshan](https://scholar.google.com.hk/citations?hl=zh-CN&user=3I5VuhUAAAAJ), [Li Xiaomeng](https://xmengli.github.io/)\*
+The implementation is built on top of `VLM-R1`. Our main contribution is the adaptation from generic VLM-R1 training to deep imbalanced regression in MLLMs through:
 
+- task-specific regression prompts
+- batch-level `CCC`-style reward design
+- benchmark construction for four MLLM DIR datasets
 
-## Overview of CCC-GRPO
-We formulate deep imbalanced regression in MLLMs as a distribution-aware reinforcement learning problem.
+## Included Scope
 
-Our formulation emphasizes batch-level relational supervision as the key to mitigating regressionto-the-mean behavior.
+This public release only includes the paper datasets:
+
+- `AgeDB-DIR`
+- `IMDB-WIKI-DIR`
+- `IMDB-Movie-DIR`
+- `BoneAge-DIR`
+
+It does **not** include unrelated historical experiments for gaze, fundus, BIWI, MPII, EchoNet, InternVL, or large hyperparameter sweep scripts.
+
+## Repository Structure
+
+- `src/open-r1-multimodal/src/open_r1/grpo_jsonl.py`
+  - main GRPO training entry for json/jsonl regression data
+- `src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py`
+  - prompt and reward implementation used for the regression tasks
+- `src/eval/run_eval_single_step.py`
+  - evaluation entry
+- `weights/`
+  - target-bin weighting files used in the experiments
+- `data/`
+  - final train/test annotations and dataset preparation metadata for the four paper datasets
+
+## Dataset Release
+
+The image assets and final public annotations are released on Hugging Face:
+
+- `ChanganYao/DeepImbalancedRegressionForMLLMs`
+
+The annotation files in this repository use relative paths such as `images/...`. They are intended to match each dataset subset in the Hugging Face release.
+
+## Benchmark Summary
+
+| Dataset | Train | Test | Target |
+| --- | ---: | ---: | --- |
+| AgeDB-DIR | 12,208 | 2,140 | Age (years) |
+| IMDB-WIKI-DIR | 81,911 | 11,016 | Age (years) |
+| IMDB-Movie-DIR | 7,049 | 1,203 | IMDb movie score |
+| BoneAge-DIR | 12,528 | 1,508 | Bone maturity (months) |
+
+## Figures
 
 <p align="center">
-    <img src="figures/MLLM_Numerical_Fig3.png" width="850"> <br>
-  
-
-
-
-## Comparison of training paradigms for numerical prediction in MLLMs. 
-
-We present the first systematic study of DIR under the MLLM paradigm, demonstrating that point-wise numerical supervision—whether via SFT or per-sample regression rewards—fails to
-capture the global structure of long-tailed continuous targets. 
-
+  <img src="figures/MLLM_Numerical_Fig3.png" width="850">
+</p>
 
 <p align="center">
-    <img src="figures/MLLM_Numerical_Fig2.png" width="850"> <br>
-
-Left: SFT treats regression as token-level classification.
-
-Middle: Standard GRPO applies point-wise scalar rewards to each generation. 
-
-Right: CCC-GRPO introduces batch-level, distributionaware relational supervision.
-
-
-## Overview of the constructed DIR benchmark for MLLMs.
-
-We reconstruct all datasets into a unified DIR benchmark tailored for MLLMs, where models are required to generate continuous values via token-based decoding under naturally skewed training distributions. In total, the benchmark covers over 129K samples. 
+  <img src="figures/MLLM_Numerical_Fig2.png" width="850">
+</p>
 
 ![intro](figures/MLLM_Numerical_3.png)
 
-
-## [Awesome Numerical Understanding Papers](https://github.com/duyao-art/Awesome-Numerical-Understanding-Papers)
-
-I have created a curated repository of recent advances in numerical reasoning for large language models.
-
-
 ## Citation
-If you find this codebase helpful, please consider to cite:
 
-```
+```bibtex
 @misc{du2026injectingdistributionalawarenessmllms,
-      title={Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression}, 
-      author={Yao Du and Shanshan Song and Xiaomeng Li},
-      year={2026},
-      eprint={2605.01402},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2605.01402}, 
+  title={Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression},
+  author={Yao Du and Shanshan Song and Xiaomeng Li},
+  year={2026},
+  eprint={2605.01402},
+  archivePrefix={arXiv},
+  primaryClass={cs.CL},
+  url={https://arxiv.org/abs/2605.01402},
 }
 ```
