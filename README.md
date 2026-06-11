@@ -6,8 +6,10 @@ Official implementation of the ICML 2026 paper:
 
 [[Paper]](https://arxiv.org/abs/2605.01402) | [[Dataset]](https://huggingface.co/datasets/ChanganYao/DeepImbalancedRegressionForMLLMs)
 
+<p align="left">
+  <img src="figures/MLLM_Numerical_Fig3.png" width="800">
+</p>
 
----
 
 ## Highlights
 
@@ -23,36 +25,23 @@ Official implementation of the ICML 2026 paper:
 - **Better long-tailed numerical prediction**  
   CCC-GRPO improves regression performance by encouraging both point-wise accuracy and global distributional alignment.
 
----
+<p align="left">
+  <img src="figures/MLLM_Numerical_Fig2.png" width="800">
+</p>
 
-## Method
 
-Most existing MLLM regression methods treat numerical prediction as an independent point-wise task. However, in long-tailed regression, this often leads to biased predictions toward frequent target regions.
 
-CCC-GRPO addresses this issue by introducing a batch-level reward based on the Concordance Correlation Coefficient (CCC):
 
-$$
-\rho_c = \frac{2\sigma_{xy}}{\sigma_x^2 + \sigma_y^2 + (\mu_x - \mu_y)^2}
-$$
-
-where \(x\) and \(y\) denote the predicted and ground-truth values, respectively.
-
-Compared with point-wise losses such as MAE or MSE, CCC jointly considers:
-
-- correlation between predictions and labels,
-- variance consistency,
-- mean alignment.
-
-This makes CCC particularly suitable for long-tailed numerical prediction, where models need to capture not only individual labels but also the overall target distribution.
-
----
 
 ## CCC Reward
-
 The simplest CCC reward implementation can be found in:
 
 ```text
 src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py
+```
+
+Core implementation:
+
 
 ```python
 def age_reward_global_ccc(completions, solution, **kwargs):
@@ -113,6 +102,11 @@ def age_reward_global_ccc(completions, solution, **kwargs):
 ```
 
 ## Benchmark
+<p align="left">
+  <img src="figures/MLLM_Numerical_3.png" width="800">
+</p>
+
+We evaluate MLLMs on four deep imbalanced regression datasets:
 
 | Dataset | Train | Test | Target |
 | --- | ---: | ---: | --- |
@@ -121,20 +115,41 @@ def age_reward_global_ccc(completions, solution, **kwargs):
 | IMDB-Movie-DIR | 7,049 | 1,203 | IMDb movie score |
 | BoneAge-DIR | 12,528 | 1,508 | Bone maturity (months) |
 
+The processed datasets are available at: [DIR_MLLM](https://huggingface.co/datasets/ChanganYao/DeepImbalancedRegressionForMLLMs⁠)
 
-[Dataset:](https://huggingface.co/datasets/ChanganYao/DeepImbalancedRegressionForMLLMs)
 
-## Figures
+---
 
-<p align="center">
-  <img src="figures/MLLM_Numerical_Fig3.png" width="850">
-</p>
+## Installation
 
-<p align="center">
-  <img src="figures/MLLM_Numerical_Fig2.png" width="850">
-</p>
+This repository is built upon the VLM-R1 multimodal training framework. Please follow their instructions for dependencies installation.
 
-![intro](figures/MLLM_Numerical_3.png)
+---
+
+## Training
+
+CCC-GRPO can be trained by specifying the proposed CCC reward function during GRPO optimization.
+
+
+A typical training command is:
+
+```bash
+bash scripts/train_ccc_grpo.sh
+```
+
+---
+
+## Evaluation
+
+After training, the model can be evaluated on the DIR benchmark datasets with:
+
+```bash
+bash scripts/eval.sh
+```
+
+
+
+
 
 ## Citation
 
