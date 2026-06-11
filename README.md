@@ -1,119 +1,106 @@
 # CCC-GRPO
 
-Official code release for the ICML 2026 paper:
+Official code for the ICML 2026 paper:
 
 **Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression**
 
 [[arXiv]](https://arxiv.org/abs/2605.01402)
 
-## Overview
+## What Is New
 
-We study **deep imbalanced regression (DIR)** in multimodal large language models. Standard MLLM training pipelines treat numerical prediction either as token classification or as point-wise scalar regression, which often leads to **regression-to-the-mean** under long-tailed continuous targets.
+- The first DIR benchmark for MLLMs across four datasets.
+- A batch-level CCC reward for long-tailed numerical prediction.
+- A simple GRPO training pipeline for multimodal regression.
 
-CCC-GRPO addresses this issue by injecting **distributional awareness** into reinforcement learning for MLLMs. Instead of rewarding each sample independently, our method introduces **batch-level relational supervision** so that the model is optimized not only for individual correctness, but also for preserving the global structure of the target distribution.
+## CCC Reward
 
-## Main Contributions
-
-- We present the **first systematic DIR benchmark for MLLMs**, covering four naturally imbalanced regression datasets: `AgeDB-DIR`, `IMDB-WIKI-DIR`, `IMDB-Movie-DIR`, and `BoneAge-DIR`.
-- We show that **point-wise supervision is insufficient** for long-tailed numerical prediction in MLLMs.
-- We propose **CCC-GRPO**, a distribution-aware reinforcement learning objective that introduces **batch-level concordance structure** into reward design.
-- We provide a practical MLLM training pipeline for DIR based on `VLM-R1`, together with benchmark annotations and evaluation code.
-
-## Method Intuition
-
-The key idea is simple:
-
-- standard SFT or regression reward treats each prediction independently
-- DIR requires preserving **relative ordering** and **global distribution shape**
-- CCC-GRPO therefore uses a **batch-level reward** instead of only per-sample correctness
-
-In other words, the model should not only predict a plausible number for one image, but also produce a set of predictions whose structure agrees with the target distribution.
-
-## A Simple Reward Example
-
-Below is a compact example showing the kind of distribution-aware supervision used in our codebase:
+The released code uses `global_rank -> age_reward_global_ccc` in [qwen_module.py](/home/ydubf/public_release_plan/staging/github/CCC-GRPO/src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py:6106).
 
 ```python
-def compute_ce_dis_loss(self, logits, y, d):
-    list_target = list(range(d))
-    target = torch.Tensor(list_target).to("cuda:0")
-    target = torch.unsqueeze(target, 1)
-    ls_weight = []
+def age_reward_global_ccc(completions, solution, **kwargs):
+    device = kwargs.get("device")
+    n_gen = kwargs.get("num_generations", 4)
 
-    for i in range(len(y)):
-        label_inv_ranks = torch.abs(y[i] - target).transpose(0, 1)
-        label_inv_ranks_norm = (
-            torch.abs(y[i] - target).transpose(0, 1)
-            / torch.sum(label_inv_ranks, dim=1)
-            * (d - 1)
-        )
-        label_inv_ranks_norm = torch.squeeze(label_inv_ranks_norm, 0)
-        label_inv_ranks_norm[y[i]] = 1.0
-        ls_label_inv_ranks_norm = label_inv_ranks_norm.detach().cpu().numpy().tolist()
-        ls_weight.append(ls_label_inv_ranks_norm)
+    reshaped_solution = [solution[i:i + n_gen] for i in range(0, len(solution), n_gen)]
+    for i in range(len(reshaped_solution)):
+        for j in range(len(reshaped_solution[i])):
+            sol_match = re.search(r"<answer>(.*?)</answer>", reshaped_solution[i][j])
+            g = sol_match.group(1).strip() if sol_match else reshaped_solution[i][j].strip()
+            reshaped_solution[i][j] = float(g)
+    gt_list = [sol[0] for sol in reshaped_solution]
 
-    weight = torch.Tensor(ls_weight).to("cuda:0")
-    logits_weight = logits * weight
-    loss = self.ce_loss_func(logits_weight, y)
-    return loss
+    contents = [completion[0]["content"] for completion in completions]
+    reshaped_content = [contents[i:i + n_gen] for i in range(0, len(contents), n_gen)]
+
+    batch_pred, batch_mean = [], []
+    for i in range(len(reshaped_content)):
+        cur_pred_list = []
+        for j in range(len(reshaped_content[i])):
+            content_matches = re.findall(r"<answer>(.*?)</answer>", reshaped_content[i][j], re.DOTALL)
+            student_answer = content_matches[-1].strip() if content_matches else reshaped_content[i][j].strip()
+            pred = extract_first_number(student_answer)
+            cur_pred_list.append(pred)
+
+        batch_pred.append(cur_pred_list)
+        t = torch.tensor(cur_pred_list, dtype=torch.float32, device=device)
+        batch_mean.append([t.mean()])
+
+    rewards = []
+    batch_size = len(batch_pred)
+    n_gen = len(batch_pred[0])
+
+    for i in range(batch_size):
+        for j in range(n_gen):
+            pred_i_j = batch_pred[i][j]
+            gt_i = gt_list[i]
+
+            pred_list = [pred_i_j] + [batch_mean[z][0].item() for z in range(batch_size) if z != i]
+            gt_list_cmp = [gt_i] + [gt_list[z] for z in range(batch_size) if z != i]
+
+            x = np.array(pred_list, dtype=np.float32)
+            y = np.array(gt_list_cmp, dtype=np.float32)
+
+            mu_x = x.mean()
+            mu_y = y.mean()
+            var_x = x.var()
+            var_y = y.var()
+            cov_xy = np.mean((x - mu_x) * (y - mu_y))
+
+            denom = var_x + var_y + (mu_x - mu_y) ** 2
+            ccc = 0.0 if denom == 0 else (2 * cov_xy) / denom
+            ccc = 0.0 if np.isnan(ccc) else ccc
+            rewards.append(float(ccc))
+
+    return rewards
 ```
 
-This snippet illustrates the central idea: predictions are not treated as isolated point targets. Instead, the loss is shaped by the **relative position of labels in the target space**, which encourages more distribution-sensitive optimization.
+## Benchmark
 
-## Benchmark Summary
+| Dataset | Train | Test | Target |
+| --- | ---: | ---: | --- |
+| AgeDB-DIR | 12,208 | 2,140 | Age (years) |
+| IMDB-WIKI-DIR | 81,911 | 11,016 | Age (years) |
+| IMDB-Movie-DIR | 7,049 | 1,203 | IMDb movie score |
+| BoneAge-DIR | 12,528 | 1,508 | Bone maturity (months) |
 
-| Dataset | Train | Test | Target | Domain |
-| --- | ---: | ---: | --- | --- |
-| AgeDB-DIR | 12,208 | 2,140 | Age (years) | In-the-wild faces |
-| IMDB-WIKI-DIR | 81,911 | 11,016 | Age (years) | Web-scale faces |
-| IMDB-Movie-DIR | 7,049 | 1,203 | IMDb movie score | Movie posters |
-| BoneAge-DIR | 12,528 | 1,508 | Bone maturity (months) | Medical imaging |
+## Minimal Usage
 
-## Repository Structure
+Core files:
 
-- `src/open-r1-multimodal/src/open_r1/grpo_jsonl.py`
-  - training entry for GRPO on regression-style `json/jsonl` data
-- `src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py`
-  - prompt construction and reward implementation
-- `src/eval/run_eval_single_step.py`
-  - evaluation entry
-- `weights/`
-  - distribution-related weighting files used by the released benchmarks
-- `data/`
-  - released annotations and dataset construction metadata
+- [grpo_jsonl.py](/home/ydubf/public_release_plan/staging/github/CCC-GRPO/src/open-r1-multimodal/src/open_r1/grpo_jsonl.py:1)
+- [qwen_module.py](/home/ydubf/public_release_plan/staging/github/CCC-GRPO/src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py:1)
+- [run_eval_single_step.py](/home/ydubf/public_release_plan/staging/github/CCC-GRPO/src/eval/run_eval_single_step.py:1)
 
-## Dataset Release
+Released data:
 
-The benchmark data are released at:
+- `AgeDB-DIR`
+- `IMDB-WIKI-DIR`
+- `IMDB-Movie-DIR`
+- `BoneAge-DIR`
+
+Dataset:
 
 - `https://huggingface.co/datasets/ChanganYao/DeepImbalancedRegressionForMLLMs`
-
-Each subset contains:
-
-- an `images/` folder
-- the released train annotation file
-- the released balanced test annotation file
-
-## Quick Start
-
-The simplest way to understand the release is:
-
-1. prepare a dataset in the same `json/jsonl` format as the files in `data/`
-2. use `grpo_jsonl.py` as the training entry
-3. use `qwen_module.py` for the prompt and reward logic
-4. use `run_eval_single_step.py` for evaluation
-
-Minimal file-level entry points:
-
-```bash
-python src/open-r1-multimodal/src/open_r1/grpo_jsonl.py
-python src/eval/run_eval_single_step.py
-```
-
-If you want to adapt the method to a new regression task, the two places to read first are:
-
-- `src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py`
-- `data/`
 
 ## Figures
 
