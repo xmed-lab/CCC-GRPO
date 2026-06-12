@@ -1,16 +1,16 @@
-# Copyright 2025 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import os
 import textwrap
@@ -45,7 +45,7 @@ from trl.data_utils import apply_chat_template, is_conversational, maybe_apply_c
 from trl.models import create_reference_model, prepare_deepspeed, unwrap_model_for_generation
 from trl.trainer.grpo_config import GRPOConfig
 from trl.trainer.utils import generate_model_card, get_comet_experiment_url
-# from trl import GRPOTrainer
+
 
 from accelerate.utils import is_peft_model, set_seed
 import PIL.Image
@@ -61,8 +61,8 @@ if is_wandb_available():
     import wandb
 
 from open_r1.vlm_modules.vlm_module import VLMBaseModule
-# What we call a reward function is a callable that takes a list of prompts and completions and returns a list of
-# rewards. When it's a string, it's a model ID, so it's loaded as a pretrained model.
+
+
 RewardFunc = Union[str, PreTrainedModel, Callable[[list, list], list[float]]]
 
 
@@ -215,40 +215,40 @@ class VLMGRPOTrainer(Trainer):
         peft_config: Optional["PeftConfig"] = None,
         freeze_vision_modules: Optional[bool] = False,
         attn_implementation: str = "flash_attention_2",
-        # torch_dtype: str = "bfloat16",
+
         torch_dtype: str = "float16",
         **kwargs,
     ):
-        # Args
+
         if args is None:
             model_name = model if isinstance(model, str) else model.config._name_or_path
             model_name = model_name.split("/")[-1]
             args = GRPOConfig(f"{model_name}-GRPO")
-        
+
         self.vlm_module = vlm_module
 
-        # Models
-        # Trained model
+
+
         model_init_kwargs = args.model_init_kwargs or {}
-        # FIXME
-        # Remember to modify it in the invernvl
+
+
         model_init_kwargs["attn_implementation"] = attn_implementation
         if model_init_kwargs.get("torch_dtype") is None:
             model_init_kwargs["torch_dtype"] = torch_dtype
-        
+
         assert isinstance(model, str), "model must be a string in the current implementation"
         model_id = model
         torch_dtype = model_init_kwargs.get("torch_dtype")
         if isinstance(torch_dtype, torch.dtype) or torch_dtype == "auto" or torch_dtype is None:
-            pass  # torch_dtype is already a torch.dtype or "auto" or None
-        elif isinstance(torch_dtype, str):  # it's a str, but not "auto"
+            pass
+        elif isinstance(torch_dtype, str):
             torch_dtype = getattr(torch, torch_dtype)
         else:
             raise ValueError(
                 "Invalid `torch_dtype` passed to `GRPOConfig`. Expected either 'auto' or a string representing "
                 f"a `torch.dtype` (e.g., 'float32'), but got {torch_dtype}."
             )
-        # Disable caching if gradient checkpointing is enabled (not supported)
+
         model_init_kwargs["use_cache"] = (
             False if args.gradient_checkpointing else model_init_kwargs.get("use_cache")
         )
@@ -256,7 +256,7 @@ class VLMGRPOTrainer(Trainer):
         model = model_cls.from_pretrained(model_id, **model_init_kwargs)
 
 
-        # LoRA
+
         self.vision_modules_keywords = self.vlm_module.get_vision_modules_keywords()
         if peft_config is not None:
             print("Applying LoRA...")
@@ -264,23 +264,23 @@ class VLMGRPOTrainer(Trainer):
                 cls = torch.nn.Linear
                 lora_module_names = set()
                 for name, module in model.named_modules():
-                    # LoRA is not applied to the vision modules
+
                     if any(mm_keyword in name for mm_keyword in multimodal_keywords):
                         continue
                     if isinstance(module, cls):
                         lora_module_names.add(name)
-                for m in lora_module_names:  # needed for 16-bit
+                for m in lora_module_names:
                     if "embed_tokens" in m:
                         lora_module_names.remove(m)
                 return list(lora_module_names)
-            
 
-                # # 注意这里的 [:]，它创建了一个拷贝用于循环，修改的是原列表
-                # for m in list(lora_module_names):  
-                #     if "embed_tokens" in m or "lm_head" in m:
-                #         lora_module_names.remove(m) # 从原 set 中删除
 
-                # return list(lora_module_names) # 最后转回 list 返回
+
+
+
+
+
+
 
 
 
@@ -290,74 +290,74 @@ class VLMGRPOTrainer(Trainer):
             model = get_peft_model(model, peft_config)
             model.enable_input_require_grads()
 
-        # self.vision_modules_keywords = self.vlm_module.get_vision_modules_keywords()
-        # if peft_config is not None:
-        #     print("Applying LoRA...")
-        #     def find_all_linear_names(model, multimodal_keywords):
-        #         cls = torch.nn.Linear
-        #         lora_module_names = set()
-        #         for name, module in model.named_modules():
-        #             # LoRA is not applied to the vision modules
-        #             # if any(mm_keyword in name for mm_keyword in multimodal_keywords):
-        #             #     continue
-
-                    
-        #             if isinstance(module, cls):
-        #                 lora_module_names.add(name)
-        #         for m in lora_module_names:  # needed for 16-bit
-        #             if "embed_tokens" in m:
-        #                 lora_module_names.remove(m)
-        #         return list(lora_module_names)
-        #     target_modules = find_all_linear_names(model, self.vision_modules_keywords)
-        #     peft_config.target_modules = target_modules
-        #     model = get_peft_model(model, peft_config) 
-
-        #     model.enable_input_require_grads()
 
 
-        # Freeze vision modules
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         if freeze_vision_modules:
             print("Freezing vision modules...")
             for n, p in model.named_parameters():
                 if any(keyword in n for keyword in self.vision_modules_keywords):
                     p.requires_grad = False
 
-                    
 
-        # Compute the number of trainable parameters and print the parameter that is trainable
+
+
         trainable_params = [p for p in model.parameters() if p.requires_grad]
         total_params = sum(p.numel() for p in trainable_params)
-        # for n, p in model.named_parameters():
-        #     if p.requires_grad:
-        #         print(n, p.shape)
+
+
+
         print(f"Total trainable parameters: {total_params}")
-        # Enable gradient checkpointing if requested
+
         if args.gradient_checkpointing:
             model = self._enable_gradient_checkpointing(model, args)
 
-        # Reference model
+
         self.beta = args.beta
         if self.beta == 0.0:
-            # If beta is 0.0, the reference model is not needed
+
             self.ref_model = None
         elif is_deepspeed_zero3_enabled():
-            # self.ref_model = model_cls.from_pretrained(model_id, **model_init_kwargs)
+
             self.ref_model = AutoModelForCausalLM.from_pretrained(model_id, **model_init_kwargs)
         elif is_peft_model(model):
-            # If PEFT is used, the reference model is not needed since the adapter can be disabled
-            # to revert to the initial model.
+
+
             self.ref_model = None
         else:
-            # If PEFT configuration is not provided, create a reference model based on the initial model.
+
             self.ref_model = create_reference_model(model)
 
-        # Processing class
+
         if processing_class is None:
             processing_cls = self.vlm_module.get_processing_class()
             processing_class = processing_cls.from_pretrained(model_id, trust_remote_code=model_init_kwargs.get("trust_remote_code", None))
             for component, processing_keyword in self.vlm_module.get_custom_processing_keywords():
                 if processing_keyword in kwargs:
-                    # If we cannot find component in processing_class, return the processing_class itself
+
                     processing_component = getattr(processing_class, component, processing_class)
                     setattr(processing_component, processing_keyword, kwargs[processing_keyword])
             if getattr(processing_class, "tokenizer",  None) is not None:
@@ -369,14 +369,14 @@ class VLMGRPOTrainer(Trainer):
                 pad_token_id = processing_class.pad_token_id
 
         self.vlm_module.post_model_init(model, processing_class)
-        # if is_peft_model(model):
-        #     self.vlm_module.post_model_init(model.base_model.model, processing_class)
-        # else:
-        #     self.vlm_module.post_model_init(model, processing_class)
+
+
+
+
 
         self.vlm_module.post_model_init(self.ref_model, processing_class)
 
-        # Reward functions
+
         if not isinstance(reward_funcs, list):
             reward_funcs = [reward_funcs]
         for i, reward_func in enumerate(reward_funcs):
@@ -386,7 +386,7 @@ class VLMGRPOTrainer(Trainer):
                 )
         self.reward_funcs = reward_funcs
 
-        # Reward processing class
+
         if reward_processing_classes is None:
             reward_processing_classes = [None] * len(reward_funcs)
         elif not isinstance(reward_processing_classes, list):
@@ -401,52 +401,52 @@ class VLMGRPOTrainer(Trainer):
                     reward_processing_class = AutoTokenizer.from_pretrained(reward_func.config._name_or_path)
                 if reward_processing_class.pad_token_id is None:
                     reward_processing_class.pad_token = reward_processing_class.eos_token
-                # The reward model computes the reward for the latest non-padded token in the input sequence.
-                # So it's important to set the pad token ID to the padding token ID of the processing class.
+
+
                 reward_func.config.pad_token_id = reward_processing_class.pad_token_id
                 reward_processing_classes[i] = reward_processing_class
         self.reward_processing_classes = reward_processing_classes
 
-        # Data collator
-        def data_collator(features):  # No data collation is needed in GRPO
+
+        def data_collator(features):
             return features
 
-        # Training arguments
+
         self.max_prompt_length = args.max_prompt_length
         self.max_prompt_length = None
         if args.max_prompt_length is not None:
             warnings.warn("Setting max_prompt_length is currently not supported, it has been set to None")
 
-        self.max_completion_length = args.max_completion_length  # = |o_i| in the GRPO paper
-        self.num_generations = args.num_generations  # = G in the GRPO paper
+        self.max_completion_length = args.max_completion_length
+        self.num_generations = args.num_generations
         self.generation_config = GenerationConfig(
             max_new_tokens=self.max_completion_length,
-            do_sample=True,  
+            do_sample=True,
             temperature=1,
             pad_token_id=pad_token_id,
         )
-        if hasattr(self.vlm_module, "get_eos_token_id"): # For InternVL and GLM
+        if hasattr(self.vlm_module, "get_eos_token_id"):
             self.generation_config.eos_token_id = self.vlm_module.get_eos_token_id(processing_class)
         self.beta = args.beta
         self.epsilon_low = args.epsilon
         self.epsilon_high = args.epsilon_high if args.epsilon_high is not None else args.epsilon
 
-        # Multi-step
-        self.num_iterations = args.num_iterations  # = 𝜇 in the GRPO paper
-        # Tracks the number of iterations (forward + backward passes), including those within a gradient accumulation cycle
+
+        self.num_iterations = args.num_iterations
+
         self._step = 0
-        # Buffer the batch to reuse generated outputs across multiple updates
+
         self._buffered_inputs = [None] * args.gradient_accumulation_steps
 
-        # The trainer estimates the number of FLOPs (floating-point operations) using the number of elements in the
-        # input tensor associated with the key "input_ids". However, in GRPO, the sampled data does not include the
-        # "input_ids" key. Instead, the available keys is "prompt". As a result, the trainer issues the warning:
-        # "Could not estimate the number of tokens of the input, floating-point operations will not be computed." To
-        # suppress this warning, we set the "estimate_tokens" key in the model's "warnings_issued" dictionary to True.
-        # This acts as a flag to indicate that the warning has already been issued.
+
+
+
+
+
+
         model.warnings_issued["estimate_tokens"] = True
 
-        # Initialize the metrics
+
         self._metrics = defaultdict(list)
 
         super().__init__(
@@ -460,7 +460,7 @@ class VLMGRPOTrainer(Trainer):
             optimizers=optimizers,
         )
 
-        # Check if the per_device_train/eval_batch_size * num processes can be divided by the number of generations
+
         num_processes = self.accelerator.num_processes
         global_batch_size = args.per_device_train_batch_size * num_processes
         possible_values = [n_gen for n_gen in range(2, global_batch_size + 1) if (global_batch_size) % n_gen == 0]
@@ -480,18 +480,18 @@ class VLMGRPOTrainer(Trainer):
                     f"eval batch size, the valid values for the number of generations are: {possible_values}."
                 )
 
-        # Ensure each process receives a unique seed to prevent duplicate completions when generating with
-        # transformers if num_generations exceeds per_device_train_batch_size. We could skip it if we use vLLM, but
-        # it's safer to set it in all cases.
+
+
+
         set_seed(args.seed, device_specific=True)
 
-        # Gradient accumulation requires scaled loss. Normally, loss scaling in the parent class depends on whether the
-        # model accepts loss-related kwargs. Since we compute our own loss, this check is irrelevant. We set
-        # self.model_accepts_loss_kwargs to False to enable scaling.
+
+
+
         self.model_accepts_loss_kwargs = False
 
         if self.ref_model is not None:
-            # if self.is_deepspeed_enabled:
+
             if is_deepspeed_zero3_enabled():
                 self.ref_model = prepare_deepspeed(self.ref_model, self.accelerator)
             else:
@@ -503,22 +503,22 @@ class VLMGRPOTrainer(Trainer):
 
     def _enable_gradient_checkpointing(self, model: PreTrainedModel, args: GRPOConfig) -> PreTrainedModel:
         """Enables gradient checkpointing for the model."""
-        # Ensure use_cache is disabled
+
         model.config.use_cache = False
 
-        # Enable gradient checkpointing on the base model for PEFT
+
         if is_peft_model(model):
             model.base_model.gradient_checkpointing_enable()
-        # Enable gradient checkpointing for non-PEFT models
+
         else:
             model.gradient_checkpointing_enable()
             try:
-                # For InternVL; these operations are copied from the original training script of InternVL
+
                 model.language_model.config.use_cache = False
                 model.vision_model.gradient_checkpointing = True
                 model.vision_model.encoder.gradient_checkpointing = True
                 model.language_model._set_gradient_checkpointing()
-                # This line is necessary, otherwise the `model.gradient_checkpointing_enable()` will be executed during the training process, leading to an error since InternVL does not support this operation.
+
                 args.gradient_checkpointing = False
             except:
                 pass
@@ -532,22 +532,22 @@ class VLMGRPOTrainer(Trainer):
             model.enable_input_require_grads()
 
         return model
-    
+
     def _set_signature_columns_if_needed(self):
-        # If `self.args.remove_unused_columns` is True, non-signature columns are removed.
-        # By default, this method sets `self._signature_columns` to the model's expected inputs.
-        # In GRPOTrainer, we preprocess data, so using the model's signature columns doesn't work.
-        # Instead, we set them to the columns expected by the `training_step` method, hence the override.
+
+
+
+
         if self._signature_columns is None:
             self._signature_columns = ["prompt"]
 
 
-    # Get the per-token log probabilities for the completions for the model and the reference model
+
     def _get_per_token_logps(self, model, input_ids, attention_mask, **custom_multimodal_inputs):
-        logits = model(input_ids=input_ids, attention_mask=attention_mask, **custom_multimodal_inputs).logits  # (B, L, V)
-        logits = logits[:, :-1, :]  # (B, L-1, V), exclude the last logit: it corresponds to the next token pred
-        input_ids = input_ids[:, 1:]  # (B, L-1), exclude the first input ID since we don't have logits for it
-        # Compute the log probabilities for the input tokens. Use a loop to reduce memory peak.
+        logits = model(input_ids=input_ids, attention_mask=attention_mask, **custom_multimodal_inputs).logits
+        logits = logits[:, :-1, :]
+        input_ids = input_ids[:, 1:]
+
         per_token_logps = []
         for logits_row, input_ids_row in zip(logits, input_ids):
             log_probs = logits_row.log_softmax(dim=-1)
@@ -557,7 +557,7 @@ class VLMGRPOTrainer(Trainer):
 
 
     def _prepare_inputs(self, inputs):
-        # Simple pass-through, just like original
+
         return inputs
 
     def _get_key_from_inputs(self, x, key):
@@ -572,7 +572,7 @@ class VLMGRPOTrainer(Trainer):
         device = self.accelerator.device
         prompts = [x["prompt"] for x in inputs]
         prompts_text = self.vlm_module.prepare_prompt(self.processing_class, inputs)
-        # Handle both pre-loaded images and image paths
+
         images = []
         for x in inputs:
             if "image" in x:
@@ -584,10 +584,10 @@ class VLMGRPOTrainer(Trainer):
 
             for img in imgs:
                 try:
-                    # Ensure minimum dimensions of 28 pixels
+
                     w, h = img.size
                     if w < 28 or h < 28:
-                    # Calculate new dimensions maintaining aspect ratio
+
                         if w < h:
                             new_w = 28
                             new_h = int(h * (28/w))
@@ -598,7 +598,7 @@ class VLMGRPOTrainer(Trainer):
                 except:
                     pass
                 images.append(img)
-                
+
 
         prompt_inputs, additional_output = self.vlm_module.prepare_model_inputs(
             self.processing_class,
@@ -612,24 +612,24 @@ class VLMGRPOTrainer(Trainer):
         prompt_inputs = super()._prepare_inputs(prompt_inputs)
         prompt_ids, prompt_mask = prompt_inputs["input_ids"], prompt_inputs["attention_mask"]
 
-        # image_grid_thw may be needed for the reward function
+
         if additional_output is not None:
             assert len(additional_output) == len(inputs)
             for i, (input_i, additional_output_i) in enumerate(zip(inputs, additional_output)):
                 input_i.update(additional_output_i)
 
 
-        # max_prompt_length is not supported yet
-        # if self.max_prompt_length is not None:
-        #     prompt_ids = prompt_ids[:, -self.max_prompt_length :]
-        #     prompt_inputs["input_ids"] = prompt_ids
-        #     prompt_mask = prompt_mask[:, -self.max_prompt_length :]
-        #     prompt_inputs["attention_mask"] = prompt_mask
 
-        # Generate completions
+
+
+
+
+
+
+
         with unwrap_model_for_generation(model, self.accelerator) as unwrapped_model:
             generate_returned_result = unwrapped_model.generate(
-                **{k: v for k, v in prompt_inputs.items() if k not in self.vlm_module.get_non_generate_params()}, 
+                **{k: v for k, v in prompt_inputs.items() if k not in self.vlm_module.get_non_generate_params()},
                 generation_config=self.generation_config
             )
             prompt_length = prompt_ids.size(1)
@@ -638,27 +638,27 @@ class VLMGRPOTrainer(Trainer):
                 prompt_ids = prompt_completion_ids[:, :prompt_length]
                 completion_ids = prompt_completion_ids[:, prompt_length:]
             else:
-                # In this case, the input of the LLM backbone is the embedding of the combination of the image and text prompt
-                # So the returned result of the `generate` method only contains the completion ids
+
+
                 completion_ids = generate_returned_result
                 prompt_completion_ids = torch.cat([prompt_ids, completion_ids], dim=1)
 
-        # Mask everything after the first EOS token
+
         is_eos = completion_ids == self.processing_class.eos_token_id
         eos_idx = torch.full((is_eos.size(0),), is_eos.size(1), dtype=torch.long, device=device)
         eos_idx[is_eos.any(dim=1)] = is_eos.int().argmax(dim=1)[is_eos.any(dim=1)]
         sequence_indices = torch.arange(is_eos.size(1), device=device).expand(is_eos.size(0), -1)
         completion_mask = (sequence_indices <= eos_idx.unsqueeze(1)).int()
 
-        # Concatenate prompt_mask with completion_mask for logit computation
-        attention_mask = torch.cat([prompt_mask, completion_mask], dim=1)  # (B, P+C)
 
-        # Get the multimodal inputs
+        attention_mask = torch.cat([prompt_mask, completion_mask], dim=1)
+
+
         multimodal_keywords = self.vlm_module.get_custom_multimodal_keywords()
         multimodal_inputs = {k: prompt_inputs[k] if k in prompt_inputs else None for k in multimodal_keywords}
         with torch.no_grad():
-            # When using num_iterations == 1, old_per_token_logps == per_token_logps, so we can skip its
-            # computation here, and use per_token_logps.detach() instead.
+
+
             if self.num_iterations > 1:
                 old_per_token_logps = self._get_per_token_logps(
                     model, prompt_completion_ids, attention_mask, **multimodal_inputs
@@ -681,13 +681,13 @@ class VLMGRPOTrainer(Trainer):
         if ref_per_token_logps is not None:
             ref_per_token_logps = ref_per_token_logps[:, prompt_length - 1:]
 
-        # Decode the generated completions
+
         completions = self.processing_class.batch_decode(completion_ids, skip_special_tokens=True)
         if is_conversational(inputs[0]):
             completions = [[{"role": "assistant", "content": completion}] for completion in completions]
 
-        # Compute the rewards
-        # No need to duplicate prompts as we're not generating multiple completions per prompt
+
+
 
         rewards_per_func = torch.zeros(len(prompts), len(self.reward_funcs), device=device)
         for i, (reward_func, reward_processing_class) in enumerate(
@@ -704,51 +704,51 @@ class VLMGRPOTrainer(Trainer):
                 )
                 reward_inputs = super()._prepare_inputs(reward_inputs)
                 with torch.inference_mode():
-                    rewards_per_func[:, i] = reward_func(**reward_inputs).logits[:, 0]  # Shape (B*G,)
+                    rewards_per_func[:, i] = reward_func(**reward_inputs).logits[:, 0]
             else:
-                # Repeat all input columns (but "prompt" and "completion") to match the number of generations
+
                 reward_kwargs = {key: [] for key in inputs[0].keys() if key not in ["prompt", "completion"]}
                 for key in reward_kwargs:
                     for example in inputs:
-                        # No need to duplicate prompts as we're not generating multiple completions per prompt
-                        # reward_kwargs[key].extend([example[key]] * self.num_generations)
+
+
                         reward_kwargs[key].extend([example[key]])
                 output_reward_func = reward_func(prompts=prompts, completions=completions, **reward_kwargs)
                 rewards_per_func[:, i] = torch.tensor(output_reward_func, dtype=torch.float32, device=device)
 
-        # Gather rewards across processes
+
         rewards_per_func = self.accelerator.gather(rewards_per_func)
-        
-        # Sum the rewards from all reward functions
+
+
         rewards = rewards_per_func.sum(dim=1)
-        
-        # Compute grouped-wise rewards
-        # Each group consists of num_generations completions for the same prompt
+
+
+
         mean_grouped_rewards = rewards.view(-1, self.num_generations).mean(dim=1)
         std_grouped_rewards = rewards.view(-1, self.num_generations).std(dim=1)
-        
-        # Normalize the rewards to compute the advantages
+
+
         mean_grouped_rewards = mean_grouped_rewards.repeat_interleave(self.num_generations, dim=0)
         std_grouped_rewards = std_grouped_rewards.repeat_interleave(self.num_generations, dim=0)
-        # advantages_old = (rewards - mean_grouped_rewards) / (std_grouped_rewards + 1e-4)
+
 
 
         advantages = (rewards - mean_grouped_rewards) / (std_grouped_rewards + 1e-4)
 
-        # -----------------------this is for MAE reward reweighting design--------------------------
-        # advantages = (rewards - mean_grouped_rewards)
-        
-        # std_stable = 0.001
-        # advantages = (rewards - mean_grouped_rewards) / std_stable
-        
-        # Get only the local slice of advantages
+
+
+
+
+
+
+
         process_slice = slice(
             self.accelerator.process_index * len(prompts),
             (self.accelerator.process_index + 1) * len(prompts),
         )
         advantages = advantages[process_slice]
 
-        # Log the metrics
+
         completion_length = self.accelerator.gather_for_metrics(completion_mask.sum(1)).float().mean().item()
         self._metrics["completion_length"].append(completion_length)
 
@@ -764,9 +764,9 @@ class VLMGRPOTrainer(Trainer):
 
         self._metrics["reward_std"].append(self.accelerator.gather_for_metrics(std_grouped_rewards).mean().item())
 
-        # self._metrics["advantage_old"].append(self.accelerator.gather_for_metrics(advantages_old).mean().item())
 
-        # self._metrics["advantage"].append(self.accelerator.gather_for_metrics(advantages).mean().item())
+
+
 
         return {
             "prompt_ids": prompt_ids,
@@ -782,8 +782,8 @@ class VLMGRPOTrainer(Trainer):
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
         if return_outputs:
             raise ValueError("The GRPOTrainer does not support returning outputs")
-    
-        # Check if we need to generate new completions or use buffered ones
+
+
         if self.state.global_step % self.num_iterations == 0:
             inputs = self._generate_and_score_completions(inputs, model)
             self._buffered_inputs[self._step % self.args.gradient_accumulation_steps] = inputs
@@ -791,48 +791,48 @@ class VLMGRPOTrainer(Trainer):
             inputs = self._buffered_inputs[self._step % self.args.gradient_accumulation_steps]
         self._step += 1
 
-        # Get the prepared inputs
+
         prompt_ids, prompt_mask = inputs["prompt_ids"], inputs["prompt_mask"]
         completion_ids, completion_mask = inputs["completion_ids"], inputs["completion_mask"]
         multimodal_inputs = inputs["multimodal_inputs"]
-        
-        # Concatenate for full sequence
+
+
         input_ids = torch.cat([prompt_ids, completion_ids], dim=1)
         attention_mask = torch.cat([prompt_mask, completion_mask], dim=1)
 
-        # Get the current policy's log probabilities
+
         per_token_logps = self._get_per_token_logps(model, input_ids, attention_mask, **multimodal_inputs)
-        # Get rid of the prompt (-1 because of the shift done in get_per_token_logps)
+
         per_token_logps = per_token_logps[:, prompt_ids.size(1) - 1:]
 
-        # Get the advantages from inputs
+
         advantages = inputs["advantages"]
 
-        # When using num_iterations == 1, old_per_token_logps == per_token_logps, so we can skip its computation
-        # and use per_token_logps.detach() instead
+
+
         old_per_token_logps = inputs["old_per_token_logps"] if self.num_iterations > 1 else per_token_logps.detach()
 
-        # Compute the policy ratio and clipped version
+
         coef_1 = torch.exp(per_token_logps - old_per_token_logps)
         coef_2 = torch.clamp(coef_1, 1 - self.epsilon_low, 1 + self.epsilon_high)
         per_token_loss1 = coef_1 * advantages.unsqueeze(1)
         per_token_loss2 = coef_2 * advantages.unsqueeze(1)
         per_token_loss = -torch.min(per_token_loss1, per_token_loss2)
 
-        # Add KL penalty if beta > 0
+
         if self.beta > 0:
             ref_per_token_logps = inputs["ref_per_token_logps"]
             per_token_kl = torch.exp(ref_per_token_logps - per_token_logps) - (ref_per_token_logps - per_token_logps) - 1
             per_token_loss = per_token_loss + self.beta * per_token_kl
 
-            # Log KL divergence
+
             mean_kl = ((per_token_kl * completion_mask).sum(dim=1) / completion_mask.sum(dim=1)).mean()
             self._metrics["kl"].append(self.accelerator.gather_for_metrics(mean_kl).mean().item())
 
-        # Compute final loss
+
         loss = ((per_token_loss * completion_mask).sum(dim=1) / completion_mask.sum(dim=1)).mean()
 
-        # Log clip ratio
+
         is_clipped = (per_token_loss1 < per_token_loss2).float()
         clip_ratio = (is_clipped * completion_mask).sum() / completion_mask.sum()
         self._metrics["clip_ratio"].append(self.accelerator.gather_for_metrics(clip_ratio).mean().item())
@@ -840,155 +840,155 @@ class VLMGRPOTrainer(Trainer):
         return loss
 
 
-    # def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
-    #         if return_outputs:
-    #             raise ValueError("The GRPOTrainer does not support returning outputs")
-        
-    #         # Check if we need to generate new completions or use buffered ones
-    #         # (保持原有的 Buffer 逻辑不变)
-    #         if self.state.global_step % self.num_iterations == 0:
-    #             inputs = self._generate_and_score_completions(inputs, model)
-    #             self._buffered_inputs[self._step % self.args.gradient_accumulation_steps] = inputs
-    #         else:
-    #             inputs = self._buffered_inputs[self._step % self.args.gradient_accumulation_steps]
-    #         self._step += 1
-
-    #         # Get the prepared inputs
-    #         prompt_ids, prompt_mask = inputs["prompt_ids"], inputs["prompt_mask"]
-    #         completion_ids, completion_mask = inputs["completion_ids"], inputs["completion_mask"]
-    #         multimodal_inputs = inputs["multimodal_inputs"]
-            
-    #         # Concatenate for full sequence
-    #         input_ids = torch.cat([prompt_ids, completion_ids], dim=1)
-    #         attention_mask = torch.cat([prompt_mask, completion_mask], dim=1)
-
-    #         # 1. Get the current policy's log probabilities (pi_theta)
-    #         per_token_logps = self._get_per_token_logps(model, input_ids, attention_mask, **multimodal_inputs)
-    #         # Get rid of the prompt (-1 because of the shift done in get_per_token_logps)
-    #         per_token_logps = per_token_logps[:, prompt_ids.size(1) - 1:]
-
-    #         # 2. Get the old policy's log probabilities (pi_theta_old)
-    #         # When using num_iterations == 1, we treat the current model as old for the first pass, 
-    #         # but logically for Reg-GRPO, old_logps should be fixed from the sampling phase.
-    #         old_per_token_logps = inputs["old_per_token_logps"] if self.num_iterations > 1 else per_token_logps.detach()
-
-    #         # 3. Calculate rho (Log Ratio) at Sequence Level
-    #         # Formula: rho(x, y) = log pi_theta(y|x) - log pi_old(y|x)
-    #         # We sum the token log-diffs over the completion to get the sequence-level ratio log
-    #         per_token_log_diff = per_token_logps - old_per_token_logps
-    #         # Use completion_mask to ignore padding tokens
-    #         rho = (per_token_log_diff * completion_mask).sum(dim=1) 
-
-    #         # # 4. Calculate Predicted Advantages (A_theta)
-    #         # # Formula: A_theta = (rho - mu_rho) / sigma_rho
-    #         # # We need to reshape rho to [Batch // Group_Size, Group_Size] to compute group stats
-    #         # # self.num_generations is the group size (G)
-    #         # num_generations = self.num_generations 
-            
-    #         # # Reshape to separate groups
-    #         # # Shape: [Num_Prompts, Num_Generations]
-    #         # rho_grouped = rho.view(-1, num_generations)
-            
-    #         # # Compute mean and std per group (dim=1)
-    #         # mu_rho = rho_grouped.mean(dim=1, keepdim=True)
-    #         # sigma_rho = rho_grouped.std(dim=1, keepdim=True, unbiased=True)
-            
-    #         # # Add epsilon for numerical stability in case std is 0
-    #         # sigma_rho = torch.clamp(sigma_rho, min=1e-3)
-
-    #         # # Normalize rho to get predicted advantages
-    #         # # pred_advantages_grouped = (rho_grouped - mu_rho) / sigma_rho
-    #         # pred_advantages_grouped = (rho_grouped - mu_rho.detach()) / (sigma_rho.detach() + 1e-3)
-            
-    #         # # Flatten back to match inputs["advantages"] shape
-    #         # pred_advantages = pred_advantages_grouped.view(-1)
 
 
-    #         # 4. Calculate Predicted Advantages (A_theta) with STRONG Stability Fixes
-    #         num_generations = self.num_generations 
-    #         rho_grouped = rho.view(-1, num_generations)
-            
-    #         # 计算统计量
-    #         mu_rho = rho_grouped.mean(dim=1, keepdim=True)
-    #         sigma_rho = rho_grouped.std(dim=1, keepdim=True, unbiased=True)
-            
-    #         # 【关键修复 1】：Detach 统计量
-    #         # 对于回归数字这种短序列，不要让模型通过“挤压方差”来优化 Loss，
-    #         # 必须切断分母的梯度，否则极易爆炸。
-    #         mu_rho = mu_rho.detach()
-    #         sigma_rho = sigma_rho.detach()
-            
-    #         # 【关键修复 2】：Safe Division (掩码处理)
-    #         # 如果 sigma 非常小（说明这一组生成的数字全是一样的），
-    #         # 那么这一组就没有“相对优势”可言，预测的 Advantage 应该被视为 0，或者不进行归一化。
-    #         # 这里我们设定一个阈值，如果方差太小，就强制分母为一个安全值 (如 1.0)，
-    #         # 这样 (rho - mu) / 1.0 ≈ 0 / 1.0 = 0，避免了爆炸。
-            
-    #         # EPS = 1e-4
-    #         # is_zero_variance = sigma_rho < EPS
-            
-    #         # # 如果方差过小，我们将分母设为 1.0（使其变为不缩放），否则保持 sigma
-    #         # sigma_rho_safe = torch.where(is_zero_variance, torch.ones_like(sigma_rho), sigma_rho)
 
-    #         # sigma_rho_safe = torch.clamp(sigma_rho, min=1e-3)
-    #         sigma_rho_safe = sigma_rho
-            
-    #         # 计算归一化结果
-    #         pred_advantages_grouped = (rho_grouped - mu_rho) / sigma_rho_safe
-            
-    #         # 【关键修复 3】：对于方差为 0 的组，由于分子也是 0 (rho - rho_mean)，结果应该是 0。
-    #         # 但为了防止浮点误差导致出现的微小数值被放大，我们显式地 mask 掉它们。
-    #         # (可选，通常上面的 where 已经够了，但这更保险)
-    #         # pred_advantages_grouped = pred_advantages_grouped * (~is_zero_variance).float()
 
-    #         pred_advantages = pred_advantages_grouped.view(-1)
 
-    #         # 5. Get Ground Truth Advantages (A_hat)
-    #         # inputs["advantages"] corresponds to A_hat = (R - mu_r) / sigma_r
-    #         # usually computed in _generate_and_score_completions
-    #         target_advantages = inputs["advantages"]
 
-    #         # 6. Compute Regressive Loss (MSE)
-    #         # Formula: E[(A_hat - A_theta)^2]
-    #         reg_loss = ((target_advantages - pred_advantages) ** 2).mean()
 
-    #         # 7. Add KL Penalty (if beta > 0)
-    #         # Formula: L = L_reg + beta * D_KL
-    #         # We use the approximate KL formulation from the original code
-    #         mean_kl = 0.0
-    #         if self.beta > 0:
-    #             ref_per_token_logps = inputs["ref_per_token_logps"]
-    #             # Inverse KL approx: exp(ref - curr) - (ref - curr) - 1
-    #             per_token_kl = torch.exp(ref_per_token_logps - per_token_logps) - (ref_per_token_logps - per_token_logps) - 1
-                
-    #             # Average KL over valid tokens
-    #             mean_kl = ((per_token_kl * completion_mask).sum(dim=1) / completion_mask.sum(dim=1)).mean()
-                
-    #             # Log KL metric
-    #             self._metrics["kl"].append(self.accelerator.gather_for_metrics(mean_kl).mean().item())
-                
-    #             # Total Loss
-    #             loss = reg_loss + self.beta * mean_kl
-    #         else:
-    #             loss = reg_loss
 
-    #         # Log Metrics
-    #         # Log the MSE part specifically to monitor regression performance
-    #         self._metrics["mse_loss"] = self._metrics.get("mse_loss", [])
-    #         self._metrics["mse_loss"].append(self.accelerator.gather_for_metrics(reg_loss).mean().item())
-            
-    #         # Note: 'clip_ratio' is removed as it does not apply to Reg-GRPO
 
-    #         return loss
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
     def log(self, logs: dict[str, float], start_time: Optional[float] = None) -> None:
-        metrics = {key: sum(val) / len(val) for key, val in self._metrics.items()}  # average the metrics
+        metrics = {key: sum(val) / len(val) for key, val in self._metrics.items()}
         logs = {**logs, **metrics}
         if version.parse(transformers.__version__) >= version.parse("4.47.0.dev0"):
             super().log(logs, start_time)
-        else:  # transformers<=4.46
+        else:
             super().log(logs)
         self._metrics.clear()
 
@@ -1057,7 +1057,7 @@ class VLMGRPOTrainer(Trainer):
             * self.accelerator.num_processes
             * self.args.gradient_accumulation_steps
         )
-        
+
         return RepeatRandomSampler(
             data_source=self.train_dataset,
             mini_repeat_count=self.num_generations,

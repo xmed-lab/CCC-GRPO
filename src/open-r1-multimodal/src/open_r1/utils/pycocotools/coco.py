@@ -6,7 +6,7 @@ from matplotlib.patches import Polygon
 import numpy as np
 import copy
 import itertools
-#from . import mask as maskUtils
+
 import os
 from collections import defaultdict
 import sys
@@ -29,24 +29,24 @@ class COCO:
         :param image_folder (str): location to the folder that hosts images.
         :return:
         """
-        # load dataset
+
         self.dataset,self.anns,self.cats,self.imgs = dict(),dict(),dict(),dict()
         self.imgToAnns, self.catToImgs = defaultdict(list), defaultdict(list)
         if not annotation_file == None:
-            # print('loading annotations into memory...')
+
             tic = time.time()
             if type(annotation_file) == dict:
                 dataset = annotation_file
             else:
                 dataset = json.load(open(annotation_file, 'r'))
             assert type(dataset)==dict, 'annotation file format {} not supported'.format(type(dataset))
-            # print('Done (t={:0.2f}s)'.format(time.time()- tic))
+
             self.dataset = dataset
             self.createIndex()
 
     def createIndex(self):
-        # create index
-        # print('creating index...')
+
+
         anns, cats, imgs = {}, {}, {}
         imgToAnns,catToImgs = defaultdict(list),defaultdict(list)
         if 'annotations' in self.dataset:
@@ -66,9 +66,9 @@ class COCO:
             for ann in self.dataset['annotations']:
                 catToImgs[ann['category_id']].append(ann['image_id'])
 
-        # print('index created!')
 
-        # create class members
+
+
         self.anns = anns
         self.imgToAnns = imgToAnns
         self.catToImgs = catToImgs
@@ -210,13 +210,13 @@ class COCO:
                 c = (np.random.random((1, 3))*0.6+0.4).tolist()[0]
                 if 'segmentation' in ann:
                     if type(ann['segmentation']) == list:
-                        # polygon
+
                         for seg in ann['segmentation']:
                             poly = np.array(seg).reshape((int(len(seg)/2), 2))
                             polygons.append(Polygon(poly))
                             color.append(c)
                     else:
-                        # mask
+
                         t = self.imgs[ann['image_id']]
                         if type(ann['segmentation']['counts']) == list:
                             rle = maskUtils.frPyObjects([ann['segmentation']], t['height'], t['width'])
@@ -232,7 +232,7 @@ class COCO:
                             img[:,:,i] = color_mask[i]
                         ax.imshow(np.dstack( (img, m*0.5) ))
                 if 'keypoints' in ann and type(ann['keypoints']) == list:
-                    # turn skeleton into zero-based index
+
                     sks = np.array(self.loadCats(ann['category_id'])[0]['skeleton'])-1
                     kp = np.array(ann['keypoints'])
                     x = kp[0::3]
@@ -268,7 +268,7 @@ class COCO:
         res = COCO()
         res.dataset['images'] = [img for img in self.dataset['images']]
 
-        # print('Loading and preparing results...')
+
         tic = time.time()
         if type(resFile) == str or (PYTHON_VERSION == 2 and type(resFile) == unicode):
             anns = json.load(open(resFile))
@@ -278,7 +278,7 @@ class COCO:
             anns = resFile
         assert type(anns) == list, 'results in not an array of objects'
         annsImgIds = [ann['image_id'] for ann in anns]
-        assert set(annsImgIds) == (set(annsImgIds) & set(self.getImgIds())), \
+        assert set(annsImgIds) == (set(annsImgIds) & set(self.getImgIds())),\
                'Results do not correspond to current coco set'
         if 'caption' in anns[0]:
             imgIds = set([img['id'] for img in res.dataset['images']]) & set([ann['image_id'] for ann in anns])
@@ -298,7 +298,7 @@ class COCO:
         elif 'segmentation' in anns[0]:
             res.dataset['categories'] = copy.deepcopy(self.dataset['categories'])
             for id, ann in enumerate(anns):
-                # now only support compressed RLE format as segmentation results
+
                 ann['area'] = maskUtils.area(ann['segmentation'])
                 if not 'bbox' in ann:
                     ann['bbox'] = maskUtils.toBbox(ann['segmentation'])
@@ -314,7 +314,7 @@ class COCO:
                 ann['area'] = (x1-x0)*(y1-y0)
                 ann['id'] = id + 1
                 ann['bbox'] = [x0,y0,x1-x0,y1-y0]
-        # print('DONE (t={:0.2f}s)'.format(time.time()- tic))
+
 
         res.dataset['annotations'] = anns
         res.createIndex()
@@ -376,15 +376,15 @@ class COCO:
         h, w = t['height'], t['width']
         segm = ann['segmentation']
         if type(segm) == list:
-            # polygon -- a single object might consist of multiple parts
-            # we merge all parts into one mask rle code
+
+
             rles = maskUtils.frPyObjects(segm, h, w)
             rle = maskUtils.merge(rles)
         elif type(segm['counts']) == list:
-            # uncompressed RLE
+
             rle = maskUtils.frPyObjects(segm, h, w)
         else:
-            # rle
+
             rle = ann['segmentation']
         return rle
 

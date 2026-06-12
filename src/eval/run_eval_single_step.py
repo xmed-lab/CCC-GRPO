@@ -15,11 +15,11 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
 
-# ======================= 新增：解析 step =======================
-# parser = argparse.ArgumentParser()
-# parser.add_argument("--step", type=int, required=True)
-# args = parser.parse_args()
-# STEP = args.step
+
+
+
+
+
 
 parser = argparse.ArgumentParser()
 
@@ -37,7 +37,7 @@ DATASET = args.dataset
 DATA_FILE = args.data_file
 OUTPUT_DIR = args.output_dir
 
-# ===============================================================
+
 
 
 def setup_distributed():
@@ -58,11 +58,11 @@ local_rank, world_size, rank = setup_distributed()
 device = torch.device(f"cuda:{local_rank}" if torch.cuda.device_count() > 1 else "cuda:0")
 print(f"Process {rank} using {device}")
 
-# ======================= 配置参数（原样保留） =======================
 
-# RUN_NAME ="Qwen2.5-VL-3B-Instruct-reg-lora-IMDB-preciserank-samplemean-4generation-bz16-global-ccc-only-memory-1epoch-compression-3500-lep100"
-# DATASET = "IMDB"
-# DATA_FILE = "/home/ydubf/imbalanced-regression/imdb-wiki-dir/data/test_conversation_from_imdb_leq100.json"
+
+
+
+
 BSZ = 16
 main_rank = 0
 
@@ -108,7 +108,7 @@ def test_age_prediction():
                 "role": "user",
                 "content": [
                     {"type": "image", "image": x["image"]},
-                    # {"type": "image", "image": os.path.join("/home/ydubf/imbalanced-regression/agedb-dir/data", x["image"])},
+
                     {"type": "text", "text": QUESTION_TEMPLATE.format(Question=x["problem"])}
                 ]
             }
@@ -204,7 +204,7 @@ def run_evaluation(step):
     print(f"\n=== Evaluating checkpoint-{step} ===")
 
     MODEL_PATH = f"/ssong/share/sss_weights/vlm-r1/{RUN_NAME}/checkpoint-{step}"
-    # OUTPUT_PATH = f"./logs/age_pred_results_{DATASET}_{RUN_NAME}_{step}.json"
+
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     OUTPUT_PATH = os.path.join(
         OUTPUT_DIR,
@@ -224,7 +224,6 @@ def run_evaluation(step):
     test_age_prediction()
 
 
-# ======================= single-step 入口 =======================
+
 if __name__ == "__main__":
     run_evaluation(STEP)
-# ===============================================================

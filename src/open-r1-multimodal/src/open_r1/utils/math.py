@@ -1,21 +1,21 @@
 from math_verify import parse, verify
 def compute_score(solution_str, ground_truth) -> float:
     retval = 0.
-    
+
     if solution_str == ground_truth:
-        return 1.0 
+        return 1.0
 
     if float(verify(parse(solution_str), parse(ground_truth))) > 0:
-        return 1.0 
+        return 1.0
 
     try:
         answer = solution_str
         string_in_last_boxed = last_boxed_only_string(solution_str)
         if string_in_last_boxed is not None:
-            answer = remove_boxed(string_in_last_boxed) 
+            answer = remove_boxed(string_in_last_boxed)
 
         if is_equiv(answer, ground_truth):
-            return 1.0 
+            return 1.0
     except Exception as e:
         print(e)
 
@@ -64,7 +64,7 @@ def last_boxed_only_string(string):
 
     return retval
 
-# string normalization from https://github.com/EleutherAI/lm-evaluation-harness/blob/master/lm_eval/tasks/hendrycks_math.py
+
 def is_equiv(str1, str2, verbose=False):
     if str1 is None and str2 is None:
         print("WARNING: Both None")
@@ -131,7 +131,7 @@ def fix_a_slash_b(string):
 
 
 def remove_right_units(string):
-    # "\\text{ " only ever occurs (at least in the val set) when describing units
+
     if "\\text{ " in string:
         splits = string.split("\\text{ ")
         assert len(splits) == 2
@@ -156,65 +156,65 @@ def fix_sqrt(string):
 
 
 def strip_string(string):
-    # linebreaks
+
     string = string.replace("\n", "")
 
-    # remove inverse spaces
+
     string = string.replace("\\!", "")
 
-    # replace \\ with \
+
     string = string.replace("\\\\", "\\")
 
-    # replace tfrac and dfrac with frac
+
     string = string.replace("tfrac", "frac")
     string = string.replace("dfrac", "frac")
 
-    # remove \left and \right
+
     string = string.replace("\\left", "")
     string = string.replace("\\right", "")
 
-    # Remove circ (degrees)
+
     string = string.replace("^{\\circ}", "")
     string = string.replace("^\\circ", "")
 
-    # remove dollar signs
+
     string = string.replace("\\$", "")
 
-    # remove units (on the right)
+
     string = remove_right_units(string)
 
-    # remove percentage
-    string = string.replace("\\%", "")
-    string = string.replace("\%", "")  # noqa: W605
 
-    # " 0." equivalent to " ." and "{0." equivalent to "{." Alternatively, add "0" if "." is the start of the string
+    string = string.replace("\\%", "")
+    string = string.replace("\%", "")
+
+
     string = string.replace(" .", " 0.")
     string = string.replace("{.", "{0.")
-    # if empty, return empty string
+
     if len(string) == 0:
         return string
     if string[0] == ".":
         string = "0" + string
 
-    # to consider: get rid of e.g. "k = " or "q = " at beginning
+
     if len(string.split("=")) == 2:
         if len(string.split("=")[0]) <= 2:
             string = string.split("=")[1]
 
-    # fix sqrt3 --> sqrt{3}
+
     string = fix_sqrt(string)
 
-    # remove spaces
+
     string = string.replace(" ", "")
 
-    # \frac1b or \frac12 --> \frac{1}{b} and \frac{1}{2}, etc. Even works with \frac1{72} (but not \frac{72}1). Also does a/b --> \\frac{a}{b}
+
     string = fix_fracs(string)
 
-    # manually change 0.5 --> \frac{1}{2}
+
     if string == "0.5":
         string = "\\frac{1}{2}"
 
-    # NOTE: X/Y changed to \frac{X}{Y} in dataset, but in simple cases fix in case the model output is X/Y
+
     string = fix_a_slash_b(string)
 
     return string
