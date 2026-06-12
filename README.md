@@ -8,33 +8,9 @@ Official implementation of **CCC-GRPO: Injecting Distributional Awareness into M
   <img src="figures/MLLM_Numerical_Fig3.png" width="800">
 </p>
 
-CCC-GRPO optimizes multimodal large language models for deep imbalanced regression with a group-aware Concordance Correlation Coefficient (CCC) reward. For each sampled response, it evaluates the candidate together with the group-mean predictions of the other samples, directly aligning the prediction and target distributions:
+CCC-GRPO optimizes multimodal large language models for deep imbalanced regression with a group-aware Concordance Correlation Coefficient (CCC) reward. For each sampled response, it evaluates the candidate together with the group-mean predictions of the other samples, directly aligning the prediction and target distributions.
 
-```python
-import numpy as np
-
-def ccc(x, y):
-    x_mean, y_mean = x.mean(), y.mean()
-    covariance = np.mean((x - x_mean) * (y - y_mean))
-    return 2 * covariance / (x.var() + y.var() + (x_mean - y_mean) ** 2)
-
-def ccc_reward(candidate, sample_id, group_predictions, targets):
-    batch_predictions = group_predictions.mean(axis=1)
-    batch_predictions[sample_id] = candidate
-    return ccc(batch_predictions, targets)
-```
-
-The training implementation is in [`qwen_module.py`](src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py).
-
-## Installation
-
-```bash
-git clone https://github.com/xmed-lab/CCC-GRPO.git
-cd CCC-GRPO
-bash setup.sh
-```
-
-The experiments use Qwen2.5-VL-7B-Instruct, two GPUs, BF16, FlashAttention 2, DeepSpeed ZeRO-2, and LoRA.
+The reward implementation is available for the [AgeDB-DIR, IMDB-WIKI-DIR, and IMDB-Movie-DIR target ranges](src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py#L155-L234) and the [BoneAge-DIR target range](src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py#L237-L316).
 
 ## Data
 
