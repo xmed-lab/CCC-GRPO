@@ -2,7 +2,9 @@
 
 Official implementation of **CCC-GRPO: Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression**, accepted at ICML 2026.
 
-**Yao Du, Shanshan Song, Xiaomeng Li**
+**[Yao Du](https://scholar.google.com.hk/citations?user=8krbrWsAAAAJ&hl=zh-CN), [Shanshan Song](https://scholar.google.com/citations?hl=zh-CN&user=EoNWyTcAAAAJ&view_op=list_works&sortby=pubdate&inst=1381320739207392350), [Xiaomeng Li](https://xmengli.github.io/)**
+
+
 
 [[Paper](https://arxiv.org/abs/2605.01402)] [[Dataset](https://huggingface.co/datasets/ChanganYao/DeepImbalancedRegressionForMLLMs)]
 
