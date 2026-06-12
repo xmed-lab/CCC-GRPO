@@ -10,7 +10,6 @@ Official implementation of **CCC-GRPO: Injecting Distributional Awareness into M
 
 - **Distribution-aware reinforcement learning.** CCC-GRPO uses batch-level Concordance Correlation Coefficient supervision to align the distribution of numerical predictions with the ground-truth distribution.
 - **MLLM deep imbalanced regression benchmark.** We introduce four naturally imbalanced vision-language regression tasks covering facial age, movie ratings, and skeletal age.
-- **Simple VLM-R1 extension.** The framework retains the GRPO training pipeline and introduces task-specific prompts, numerical format rewards, and the CCC reward.
 
 <p align="center">
   <img src="figures/MLLM_Numerical_Fig2.png" width="900">
