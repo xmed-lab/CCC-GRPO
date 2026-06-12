@@ -84,7 +84,7 @@ Set the checkpoint root in `src/eval/run_eval_single_step.py` to the directory c
 
 ## Acknowledgement
 
-This project is built on [VLM-R1](https://github.com/om-ai-lab/VLM-R1). We also thank [VisualQuality-R1](https://github.com/tianhewu/visualquality-r1) for its valuable open-source work.
+This project is built on [VLM-R1](https://github.com/om-ai-lab/VLM-R1). We also thank [VisualQuality-R1](https://github.com/tianhewu/visualquality-r1) for its valuable work.
 
 ## Citation
 
