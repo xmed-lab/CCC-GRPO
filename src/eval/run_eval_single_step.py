@@ -15,12 +15,6 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
 
-# ======================= 新增：解析 step =======================
-# parser = argparse.ArgumentParser()
-# parser.add_argument("--step", type=int, required=True)
-# args = parser.parse_args()
-# STEP = args.step
-
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--step", type=int, required=True)
@@ -38,9 +32,6 @@ DATASET = args.dataset
 DATA_FILE = args.data_file
 OUTPUT_DIR = args.output_dir
 MODEL_PATH_ARG = args.model_path
-
-# ===============================================================
-
 
 def setup_distributed():
     if torch.cuda.device_count() > 1:
@@ -60,16 +51,11 @@ local_rank, world_size, rank = setup_distributed()
 device = torch.device(f"cuda:{local_rank}" if torch.cuda.device_count() > 1 else "cuda:0")
 print(f"Process {rank} using {device}")
 
-# ======================= 配置参数（原样保留） =======================
-
-# RUN_NAME ="Qwen2.5-VL-3B-Instruct-reg-lora-IMDB-preciserank-samplemean-4generation-bz16-global-ccc-only-memory-1epoch-compression-3500-lep100"
-# DATASET = "IMDB"
-# DATA_FILE = "/home/ydubf/imbalanced-regression/imdb-wiki-dir/data/test_conversation_from_imdb_leq100.json"
 BSZ = 16
 main_rank = 0
 
 
-def extract_age_from_text(content):
+def extract_value_from_text(content):
     patterns = [
         r'年龄[:：]?\s*(\d+\.?\d*)',
         r'Age[:：]?\s*(\d+\.?\d*)',
@@ -85,7 +71,7 @@ def extract_age_from_text(content):
     return None
 
 
-def test_age_prediction():
+def evaluate_regression():
     if rank == 0:
         print(f"Processing {DATASET}...")
 
@@ -110,7 +96,6 @@ def test_age_prediction():
                 "role": "user",
                 "content": [
                     {"type": "image", "image": x["image"]},
-                    # {"type": "image", "image": os.path.join("/home/ydubf/imbalanced-regression/agedb-dir/data", x["image"])},
                     {"type": "text", "text": QUESTION_TEMPLATE.format(Question=x["problem"])}
                 ]
             }
@@ -168,20 +153,20 @@ def test_age_prediction():
 
         for input_example, model_output in zip(data, all_outputs):
             match = re.search(r'<answer>(.*?)</answer>', model_output, re.DOTALL)
-            pred_age = extract_age_from_text(match.group(1)) if match else extract_age_from_text(model_output)
-            gt_age = float(input_example["solution"])
+            prediction = extract_value_from_text(match.group(1)) if match else extract_value_from_text(model_output)
+            target = float(input_example["solution"])
 
-            if pred_age is not None:
-                y_true.append(gt_age)
-                y_pred.append(pred_age)
+            if prediction is not None:
+                y_true.append(target)
+                y_pred.append(prediction)
 
             final_output.append({
                 "image": input_example["image"],
                 "question": input_example["problem"],
-                "ground_truth": gt_age,
+                "ground_truth": target,
                 "model_output": model_output,
-                "predicted_age": pred_age,
-                "error": abs(pred_age - gt_age) if pred_age is not None else None
+                "prediction": prediction,
+                "error": abs(prediction - target) if prediction is not None else None
             })
 
         mse = mean_squared_error(y_true, y_pred)
@@ -206,11 +191,10 @@ def run_evaluation(step):
     print(f"\n=== Evaluating checkpoint-{step} ===")
 
     MODEL_PATH = MODEL_PATH_ARG or f"/ssong/share/sss_weights/vlm-r1/{RUN_NAME}/checkpoint-{step}"
-    # OUTPUT_PATH = f"./logs/age_pred_results_{DATASET}_{RUN_NAME}_{step}.json"
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     OUTPUT_PATH = os.path.join(
         OUTPUT_DIR,
-        f"age_pred_results_test_delete_{DATASET}_{RUN_NAME}_{STEP}.json"
+        f"predictions_{DATASET}_{RUN_NAME}_{STEP}.json"
     )
 
     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
@@ -223,10 +207,8 @@ def run_evaluation(step):
     tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
     processor = AutoProcessor.from_pretrained(MODEL_PATH, trust_remote_code=True)
 
-    test_age_prediction()
+    evaluate_regression()
 
 
-# ======================= single-step 入口 =======================
 if __name__ == "__main__":
     run_evaluation(STEP)
-# ===============================================================

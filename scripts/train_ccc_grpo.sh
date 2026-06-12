@@ -11,7 +11,7 @@ EXP_NAME="${2:-ccc-grpo-${DATASET}}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DATA_ROOT="${DATA_ROOT:-${REPO_ROOT}/hf_data}"
-MODEL_PATH="${MODEL_PATH:-Qwen/Qwen2.5-VL-3B-Instruct}"
+MODEL_PATH="${MODEL_PATH:-Qwen/Qwen2.5-VL-7B-Instruct}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-${REPO_ROOT}/checkpoints/rl}"
 DEEPSPEED_CONFIG="${DEEPSPEED_CONFIG:-${REPO_ROOT}/src/open-r1-multimodal/local_scripts/zero2.json}"
 NNODES="${NNODES:-1}"
@@ -21,31 +21,35 @@ MASTER_PORT="${MASTER_PORT:-12558}"
 
 case "${DATASET}" in
   agedb)
-    DATA_FILE="${DATA_ROOT}/agedb/agedb_train.jsonl"
+    DATA_FILE="${DATA_ROOT}/agedb/train.jsonl"
     IMAGE_FOLDER="${DATA_ROOT}/agedb"
-    REWARD_FUNCS=(format global_rank)
+    TASK_TYPE="agedb"
+    PER_DEVICE_BATCH_SIZE="${PER_DEVICE_BATCH_SIZE:-16}"
     NUM_EPOCHS="${NUM_EPOCHS:-4}"
     SAVE_STEPS="${SAVE_STEPS:-100}"
     ;;
   imdb_movie)
     DATA_FILE="${DATA_ROOT}/imdb_movie/train.jsonl"
     IMAGE_FOLDER="${DATA_ROOT}/imdb_movie"
-    REWARD_FUNCS=(format global_rank)
-    NUM_EPOCHS="${NUM_EPOCHS:-4}"
+    TASK_TYPE="imdb_movie"
+    PER_DEVICE_BATCH_SIZE="${PER_DEVICE_BATCH_SIZE:-24}"
+    NUM_EPOCHS="${NUM_EPOCHS:-6}"
     SAVE_STEPS="${SAVE_STEPS:-100}"
     ;;
   boneage)
-    DATA_FILE="${DATA_ROOT}/boneage/boneage_train.jsonl"
+    DATA_FILE="${DATA_ROOT}/boneage/train.jsonl"
     IMAGE_FOLDER="${DATA_ROOT}/boneage"
-    REWARD_FUNCS=(format-boneage global_rank_boneage)
-    NUM_EPOCHS="${NUM_EPOCHS:-4}"
+    TASK_TYPE="boneage"
+    PER_DEVICE_BATCH_SIZE="${PER_DEVICE_BATCH_SIZE:-24}"
+    NUM_EPOCHS="${NUM_EPOCHS:-5}"
     SAVE_STEPS="${SAVE_STEPS:-100}"
     ;;
   imdb_wiki)
-    DATA_FILE="${DATA_ROOT}/imdb_wiki/imdb_train_peak_compressed_3500_leq100.jsonl"
+    DATA_FILE="${DATA_ROOT}/imdb_wiki/train.jsonl"
     IMAGE_FOLDER="${DATA_ROOT}/imdb_wiki"
-    REWARD_FUNCS=(format global_rank)
-    NUM_EPOCHS="${NUM_EPOCHS:-1}"
+    TASK_TYPE="imdb_wiki"
+    PER_DEVICE_BATCH_SIZE="${PER_DEVICE_BATCH_SIZE:-16}"
+    NUM_EPOCHS="${NUM_EPOCHS:-2}"
     SAVE_STEPS="${SAVE_STEPS:-200}"
     ;;
   *)
@@ -71,8 +75,8 @@ torchrun \
   --data_file_paths "${DATA_FILE}" \
   --image_folders "${IMAGE_FOLDER}" \
   --is_reward_customized_from_vlm_module True \
-  --task_type reg \
-  --per_device_train_batch_size 16 \
+  --task_type "${TASK_TYPE}" \
+  --per_device_train_batch_size "${PER_DEVICE_BATCH_SIZE}" \
   --gradient_accumulation_steps 2 \
   --gradient_checkpointing True \
   --logging_steps 1 \
@@ -84,7 +88,7 @@ torchrun \
   --save_steps "${SAVE_STEPS}" \
   --num_generations 4 \
   --max_completion_length 32 \
-  --reward_funcs "${REWARD_FUNCS[@]}" \
+  --reward_funcs format ccc \
   --beta 0.04 \
   --report_to wandb \
   --dataset-name released_dir_benchmark \
