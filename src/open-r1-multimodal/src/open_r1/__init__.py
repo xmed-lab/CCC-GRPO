@@ -1,1 +1,0 @@
-"""CCC-GRPO training package."""

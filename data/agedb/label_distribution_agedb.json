@@ -1,0 +1,406 @@
+{
+    "many_thresh": 100,
+    "medium_thresh": 20,
+    "label_info": {
+        "31": {
+            "count": 256,
+            "region": "many"
+        },
+        "44": {
+            "count": 221,
+            "region": "many"
+        },
+        "34": {
+            "count": 302,
+            "region": "many"
+        },
+        "74": {
+            "count": 78,
+            "region": "medium"
+        },
+        "62": {
+            "count": 178,
+            "region": "many"
+        },
+        "4": {
+            "count": 2,
+            "region": "few"
+        },
+        "61": {
+            "count": 147,
+            "region": "many"
+        },
+        "24": {
+            "count": 199,
+            "region": "many"
+        },
+        "50": {
+            "count": 257,
+            "region": "many"
+        },
+        "39": {
+            "count": 261,
+            "region": "many"
+        },
+        "54": {
+            "count": 198,
+            "region": "many"
+        },
+        "42": {
+            "count": 296,
+            "region": "many"
+        },
+        "36": {
+            "count": 287,
+            "region": "many"
+        },
+        "70": {
+            "count": 156,
+            "region": "many"
+        },
+        "37": {
+            "count": 310,
+            "region": "many"
+        },
+        "56": {
+            "count": 167,
+            "region": "many"
+        },
+        "46": {
+            "count": 227,
+            "region": "many"
+        },
+        "33": {
+            "count": 278,
+            "region": "many"
+        },
+        "45": {
+            "count": 282,
+            "region": "many"
+        },
+        "67": {
+            "count": 117,
+            "region": "many"
+        },
+        "47": {
+            "count": 229,
+            "region": "many"
+        },
+        "28": {
+            "count": 287,
+            "region": "many"
+        },
+        "53": {
+            "count": 190,
+            "region": "many"
+        },
+        "52": {
+            "count": 250,
+            "region": "many"
+        },
+        "49": {
+            "count": 207,
+            "region": "many"
+        },
+        "57": {
+            "count": 183,
+            "region": "many"
+        },
+        "25": {
+            "count": 224,
+            "region": "many"
+        },
+        "26": {
+            "count": 215,
+            "region": "many"
+        },
+        "35": {
+            "count": 353,
+            "region": "many"
+        },
+        "78": {
+            "count": 46,
+            "region": "medium"
+        },
+        "69": {
+            "count": 90,
+            "region": "medium"
+        },
+        "63": {
+            "count": 158,
+            "region": "many"
+        },
+        "40": {
+            "count": 326,
+            "region": "many"
+        },
+        "38": {
+            "count": 322,
+            "region": "many"
+        },
+        "29": {
+            "count": 253,
+            "region": "many"
+        },
+        "58": {
+            "count": 186,
+            "region": "many"
+        },
+        "59": {
+            "count": 153,
+            "region": "many"
+        },
+        "64": {
+            "count": 133,
+            "region": "many"
+        },
+        "75": {
+            "count": 98,
+            "region": "medium"
+        },
+        "86": {
+            "count": 13,
+            "region": "few"
+        },
+        "19": {
+            "count": 50,
+            "region": "medium"
+        },
+        "32": {
+            "count": 318,
+            "region": "many"
+        },
+        "65": {
+            "count": 171,
+            "region": "many"
+        },
+        "68": {
+            "count": 155,
+            "region": "many"
+        },
+        "41": {
+            "count": 260,
+            "region": "many"
+        },
+        "43": {
+            "count": 265,
+            "region": "many"
+        },
+        "79": {
+            "count": 26,
+            "region": "medium"
+        },
+        "60": {
+            "count": 185,
+            "region": "many"
+        },
+        "84": {
+            "count": 15,
+            "region": "few"
+        },
+        "71": {
+            "count": 85,
+            "region": "medium"
+        },
+        "14": {
+            "count": 9,
+            "region": "few"
+        },
+        "73": {
+            "count": 96,
+            "region": "medium"
+        },
+        "51": {
+            "count": 227,
+            "region": "many"
+        },
+        "30": {
+            "count": 325,
+            "region": "many"
+        },
+        "96": {
+            "count": 2,
+            "region": "few"
+        },
+        "48": {
+            "count": 251,
+            "region": "many"
+        },
+        "21": {
+            "count": 103,
+            "region": "many"
+        },
+        "82": {
+            "count": 24,
+            "region": "medium"
+        },
+        "72": {
+            "count": 115,
+            "region": "many"
+        },
+        "20": {
+            "count": 101,
+            "region": "many"
+        },
+        "27": {
+            "count": 244,
+            "region": "many"
+        },
+        "76": {
+            "count": 49,
+            "region": "medium"
+        },
+        "23": {
+            "count": 152,
+            "region": "many"
+        },
+        "55": {
+            "count": 234,
+            "region": "many"
+        },
+        "89": {
+            "count": 7,
+            "region": "few"
+        },
+        "18": {
+            "count": 60,
+            "region": "medium"
+        },
+        "77": {
+            "count": 44,
+            "region": "medium"
+        },
+        "93": {
+            "count": 5,
+            "region": "few"
+        },
+        "66": {
+            "count": 117,
+            "region": "many"
+        },
+        "22": {
+            "count": 123,
+            "region": "many"
+        },
+        "80": {
+            "count": 31,
+            "region": "medium"
+        },
+        "90": {
+            "count": 7,
+            "region": "few"
+        },
+        "88": {
+            "count": 7,
+            "region": "few"
+        },
+        "17": {
+            "count": 28,
+            "region": "medium"
+        },
+        "81": {
+            "count": 26,
+            "region": "medium"
+        },
+        "83": {
+            "count": 19,
+            "region": "few"
+        },
+        "1": {
+            "count": 1,
+            "region": "few"
+        },
+        "15": {
+            "count": 15,
+            "region": "few"
+        },
+        "7": {
+            "count": 5,
+            "region": "few"
+        },
+        "6": {
+            "count": 4,
+            "region": "few"
+        },
+        "87": {
+            "count": 10,
+            "region": "few"
+        },
+        "5": {
+            "count": 2,
+            "region": "few"
+        },
+        "11": {
+            "count": 8,
+            "region": "few"
+        },
+        "85": {
+            "count": 20,
+            "region": "medium"
+        },
+        "10": {
+            "count": 5,
+            "region": "few"
+        },
+        "16": {
+            "count": 18,
+            "region": "few"
+        },
+        "92": {
+            "count": 5,
+            "region": "few"
+        },
+        "9": {
+            "count": 2,
+            "region": "few"
+        },
+        "95": {
+            "count": 3,
+            "region": "few"
+        },
+        "13": {
+            "count": 8,
+            "region": "few"
+        },
+        "3": {
+            "count": 4,
+            "region": "few"
+        },
+        "98": {
+            "count": 2,
+            "region": "few"
+        },
+        "8": {
+            "count": 4,
+            "region": "few"
+        },
+        "91": {
+            "count": 7,
+            "region": "few"
+        },
+        "94": {
+            "count": 3,
+            "region": "few"
+        },
+        "100": {
+            "count": 2,
+            "region": "few"
+        },
+        "12": {
+            "count": 6,
+            "region": "few"
+        },
+        "101": {
+            "count": 1,
+            "region": "few"
+        },
+        "99": {
+            "count": 1,
+            "region": "few"
+        },
+        "97": {
+            "count": 1,
+            "region": "few"
+        }
+    }
+}

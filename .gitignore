@@ -1,8 +1,0 @@
-.cache/
-checkpoints/
-hf_data/
-logs/
-runs/
-wandb/
-__pycache__/
-*.pyc

@@ -425,6 +425,8 @@ class VLMGRPOTrainer(Trainer):
             temperature=1,
             pad_token_id=pad_token_id,
         )
+        if hasattr(self.vlm_module, "get_eos_token_id"): # For InternVL and GLM
+            self.generation_config.eos_token_id = self.vlm_module.get_eos_token_id(processing_class)
         self.beta = args.beta
         self.epsilon_low = args.epsilon
         self.epsilon_high = args.epsilon_high if args.epsilon_high is not None else args.epsilon
@@ -507,8 +509,19 @@ class VLMGRPOTrainer(Trainer):
         # Enable gradient checkpointing on the base model for PEFT
         if is_peft_model(model):
             model.base_model.gradient_checkpointing_enable()
+        # Enable gradient checkpointing for non-PEFT models
         else:
             model.gradient_checkpointing_enable()
+            try:
+                # For InternVL; these operations are copied from the original training script of InternVL
+                model.language_model.config.use_cache = False
+                model.vision_model.gradient_checkpointing = True
+                model.vision_model.encoder.gradient_checkpointing = True
+                model.language_model._set_gradient_checkpointing()
+                # This line is necessary, otherwise the `model.gradient_checkpointing_enable()` will be executed during the training process, leading to an error since InternVL does not support this operation.
+                args.gradient_checkpointing = False
+            except:
+                pass
 
         gradient_checkpointing_kwargs = args.gradient_checkpointing_kwargs or {}
         use_reentrant = (
@@ -700,12 +713,7 @@ class VLMGRPOTrainer(Trainer):
                         # No need to duplicate prompts as we're not generating multiple completions per prompt
                         # reward_kwargs[key].extend([example[key]] * self.num_generations)
                         reward_kwargs[key].extend([example[key]])
-                output_reward_func = reward_func(
-                    prompts=prompts,
-                    completions=completions,
-                    num_generations=self.num_generations,
-                    **reward_kwargs,
-                )
+                output_reward_func = reward_func(prompts=prompts, completions=completions, **reward_kwargs)
                 rewards_per_func[:, i] = torch.tensor(output_reward_func, dtype=torch.float32, device=device)
 
         # Gather rewards across processes

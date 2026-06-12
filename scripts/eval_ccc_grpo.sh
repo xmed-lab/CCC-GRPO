@@ -18,7 +18,7 @@ RUN_NAME="${RUN_NAME:-$(basename "$(dirname "${MODEL_PATH}")")}"
 case "${DATASET}" in
   agedb)
     SUBSET_ROOT="${DATA_ROOT}/agedb"
-    DATA_FILE="${SUBSET_ROOT}/test.json"
+    DATA_FILE="${SUBSET_ROOT}/test_conversation_from_agedb.json"
     ;;
   imdb_movie)
     SUBSET_ROOT="${DATA_ROOT}/imdb_movie"
@@ -26,11 +26,11 @@ case "${DATASET}" in
     ;;
   boneage)
     SUBSET_ROOT="${DATA_ROOT}/boneage"
-    DATA_FILE="${SUBSET_ROOT}/test.json"
+    DATA_FILE="${SUBSET_ROOT}/test_conversation_from_boneage.json"
     ;;
   imdb_wiki)
     SUBSET_ROOT="${DATA_ROOT}/imdb_wiki"
-    DATA_FILE="${SUBSET_ROOT}/test.json"
+    DATA_FILE="${SUBSET_ROOT}/test_conversation_from_imdb_leq100.json"
     ;;
   *)
     echo "Unsupported dataset: ${DATASET}"
