@@ -2,26 +2,47 @@
 
 Official implementation of **CCC-GRPO: Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression**, accepted at ICML 2026.
 
+**Yao Du, Shanshan Song, Xiaomeng Li**
+
 [[Paper](https://arxiv.org/abs/2605.01402)] [[Dataset](https://huggingface.co/datasets/ChanganYao/DeepImbalancedRegressionForMLLMs)]
 
+## Highlights
+
+- **Distribution-aware reinforcement learning.** CCC-GRPO uses batch-level Concordance Correlation Coefficient supervision to align the distribution of numerical predictions with the ground-truth distribution.
+- **MLLM deep imbalanced regression benchmark.** We introduce four naturally imbalanced vision-language regression tasks covering facial age, movie ratings, and skeletal age.
+- **Simple VLM-R1 extension.** The framework retains the GRPO training pipeline and introduces task-specific prompts, numerical format rewards, and the CCC reward.
+
 <p align="center">
-  <img src="figures/MLLM_Numerical_Fig3.png" width="800">
+  <img src="figures/MLLM_Numerical_Fig2.png" width="900">
 </p>
 
-CCC-GRPO optimizes multimodal large language models for deep imbalanced regression with a group-aware Concordance Correlation Coefficient (CCC) reward. For each sampled response, it evaluates the candidate together with the group-mean predictions of the other samples, directly aligning the prediction and target distributions.
+Unlike token-level SFT and point-wise GRPO rewards, CCC-GRPO evaluates each response in the context of the mini-batch. This provides distribution-level supervision for long-tailed regression targets.
 
-The reward implementation is available for the [AgeDB-DIR, IMDB-WIKI-DIR, and IMDB-Movie-DIR](src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py#L155-L234) and the [BoneAge-DIR](src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py#L237-L316).
+## CCC Reward
 
-## Data
+<p align="center">
+  <img src="figures/MLLM_Numerical_Fig3.png" width="900">
+</p>
 
-| Benchmark | Train | Test | Target |
+For each candidate response, CCC-GRPO combines its numerical prediction with the mean predictions of the other sample groups and computes their concordance with the corresponding targets. The implementation is available for:
+
+- [AgeDB-DIR, IMDB-WIKI-DIR, and IMDB-Movie-DIR](src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py#L155-L234)
+- [BoneAge-DIR](src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py#L237-L316)
+
+## Benchmark
+
+<p align="center">
+  <img src="figures/MLLM_Numerical_3.png" width="900">
+</p>
+
+| Dataset | Train | Test | Target |
 | --- | ---: | ---: | --- |
 | AgeDB-DIR | 12,208 | 2,140 | Age (years) |
 | IMDB-WIKI-DIR | 81,911 | 11,016 | Age (years) |
 | IMDB-Movie-DIR | 7,049 | 1,203 | IMDb score |
 | BoneAge-DIR | 12,528 | 1,508 | Bone maturity (months) |
 
-Download all four benchmarks from Hugging Face:
+The complete benchmark is hosted on [Hugging Face](https://huggingface.co/datasets/ChanganYao/DeepImbalancedRegressionForMLLMs) as WebDataset shards with train/test annotations.
 
 ```bash
 hf download ChanganYao/DeepImbalancedRegressionForMLLMs \
@@ -31,7 +52,14 @@ hf download ChanganYao/DeepImbalancedRegressionForMLLMs \
 
 ## Training
 
-Set `REPO_HOME`, `data_paths`, `image_folders`, `model_path`, and `--output_dir` in the selected script, then run:
+Update `REPO_HOME`, `data_paths`, `image_folders`, `model_path`, and `--output_dir` in the selected script.
+
+| Dataset | Training script | Rewards |
+| --- | --- | --- |
+| AgeDB-DIR | `run_grpo_age_lora_ccc.sh` | `format`, `global_rank` |
+| IMDB-WIKI-DIR | `run_grpo_imdbwiki_lora_ccc.sh` | `format`, `global_rank` |
+| IMDB-Movie-DIR | `run_grpo_movie_lora_ccc.sh` | `format`, `global_rank` |
+| BoneAge-DIR | `run_grpo_boneage_lora_ccc.sh` | `format-boneage`, `global_rank_boneage` |
 
 ```bash
 bash scripts/train/run_grpo_age_lora_ccc.sh
@@ -39,8 +67,6 @@ bash scripts/train/run_grpo_imdbwiki_lora_ccc.sh
 bash scripts/train/run_grpo_movie_lora_ccc.sh
 bash scripts/train/run_grpo_boneage_lora_ccc.sh
 ```
-
-AgeDB-DIR, IMDB-WIKI-DIR, and IMDB-Movie-DIR use `format + global_rank`; BoneAge-DIR uses `format-boneage + global_rank_boneage` for its target range.
 
 ## Evaluation
 
@@ -57,7 +83,7 @@ Set the checkpoint root in `src/eval/run_eval_single_step.py` to the directory c
 
 ## Acknowledgement
 
-This repository is developed from [VLM-R1](https://github.com/om-ai-lab/VLM-R1).
+This project is built on [VLM-R1](https://github.com/om-ai-lab/VLM-R1).
 
 ## Citation
 
