@@ -1,6 +1,6 @@
 # CCC-GRPO
 
-Official code for the ICML 2026 paper **Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression**.
+Official implementation of **CCC-GRPO: Injecting Distributional Awareness into MLLMs via Reinforcement Learning for Deep Imbalanced Regression**, accepted at ICML 2026.
 
 [[Paper](https://arxiv.org/abs/2605.01402)] [[Dataset](https://huggingface.co/datasets/ChanganYao/DeepImbalancedRegressionForMLLMs)]
 
@@ -8,42 +8,80 @@ Official code for the ICML 2026 paper **Injecting Distributional Awareness into 
   <img src="figures/MLLM_Numerical_Fig3.png" width="800">
 </p>
 
-## Code
+CCC-GRPO optimizes multimodal large language models for deep imbalanced regression with a group-aware Concordance Correlation Coefficient (CCC) reward. For each sampled response, it evaluates the candidate together with the group-mean predictions of the other samples, directly aligning the prediction and target distributions:
 
-The uploaded training and evaluation files are copied directly from the original experiment directory:
+```python
+import numpy as np
 
-```text
-scripts/train/run_grpo_age_lora_ccc.sh
-scripts/train/run_grpo_imdbwiki_lora_ccc.sh
-scripts/train/run_grpo_movie_lora_ccc.sh
-scripts/train/run_grpo_boneage_lora_ccc.sh
-src/eval/run_eval_single_step.py
+def ccc(x, y):
+    x_mean, y_mean = x.mean(), y.mean()
+    covariance = np.mean((x - x_mean) * (y - y_mean))
+    return 2 * covariance / (x.var() + y.var() + (x_mean - y_mean) ** 2)
+
+def ccc_reward(candidate, sample_id, group_predictions, targets):
+    batch_predictions = group_predictions.mean(axis=1)
+    batch_predictions[sample_id] = candidate
+    return ccc(batch_predictions, targets)
 ```
 
-The CCC reward used in the experiments is `age_reward_global_ccc` in:
-
-```text
-src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py
-```
-
-The original scripts retain the experiment paths and hyperparameters. Before running, replace `REPO_HOME`, `data_paths`, `image_folders`, `model_path`, and `output_dir` with paths on your machine.
-
-## Data
-
-| Dataset | Train | Test |
-| --- | ---: | ---: |
-| AgeDB-DIR | 12,208 | 2,140 |
-| IMDB-WIKI-DIR | 81,911 | 11,016 |
-| IMDB-Movie-DIR | 7,049 | 1,203 |
-| BoneAge-DIR | 12,528 | 1,508 |
-
-Download the processed images and annotations from [Hugging Face](https://huggingface.co/datasets/ChanganYao/DeepImbalancedRegressionForMLLMs).
+The training implementation is in [`qwen_module.py`](src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py).
 
 ## Installation
 
 ```bash
+git clone https://github.com/xmed-lab/CCC-GRPO.git
+cd CCC-GRPO
 bash setup.sh
 ```
+
+The experiments use Qwen2.5-VL-7B-Instruct, two GPUs, BF16, FlashAttention 2, DeepSpeed ZeRO-2, and LoRA.
+
+## Data
+
+| Benchmark | Train | Test | Target |
+| --- | ---: | ---: | --- |
+| AgeDB-DIR | 12,208 | 2,140 | Age (years) |
+| IMDB-WIKI-DIR | 81,911 | 11,016 | Age (years) |
+| IMDB-Movie-DIR | 7,049 | 1,203 | IMDb score |
+| BoneAge-DIR | 12,528 | 1,508 | Bone maturity (months) |
+
+Download all four benchmarks from Hugging Face:
+
+```bash
+hf download ChanganYao/DeepImbalancedRegressionForMLLMs \
+  --repo-type dataset \
+  --local-dir data
+```
+
+## Training
+
+Set `REPO_HOME`, `data_paths`, `image_folders`, `model_path`, and `--output_dir` in the selected script, then run:
+
+```bash
+bash scripts/train/run_grpo_age_lora_ccc.sh
+bash scripts/train/run_grpo_imdbwiki_lora_ccc.sh
+bash scripts/train/run_grpo_movie_lora_ccc.sh
+bash scripts/train/run_grpo_boneage_lora_ccc.sh
+```
+
+AgeDB-DIR, IMDB-WIKI-DIR, and IMDB-Movie-DIR use `format + global_rank`; BoneAge-DIR uses `format-boneage + global_rank_boneage` for its target range.
+
+## Evaluation
+
+```bash
+torchrun --nproc_per_node=2 src/eval/run_eval_single_step.py \
+  --step <CHECKPOINT_STEP> \
+  --run_name <RUN_NAME> \
+  --dataset <DATASET_NAME> \
+  --data_file <TEST_JSON> \
+  --output_dir ./logs
+```
+
+Set the checkpoint root in `src/eval/run_eval_single_step.py` to the directory containing `<RUN_NAME>/checkpoint-<CHECKPOINT_STEP>`.
+
+## Acknowledgement
+
+This repository is developed from [VLM-R1](https://github.com/om-ai-lab/VLM-R1).
 
 ## Citation
 
