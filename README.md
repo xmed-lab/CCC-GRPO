@@ -10,7 +10,7 @@ Official implementation of **CCC-GRPO: Injecting Distributional Awareness into M
 
 CCC-GRPO optimizes multimodal large language models for deep imbalanced regression with a group-aware Concordance Correlation Coefficient (CCC) reward. For each sampled response, it evaluates the candidate together with the group-mean predictions of the other samples, directly aligning the prediction and target distributions.
 
-The reward implementation is available for the [AgeDB-DIR, IMDB-WIKI-DIR, and IMDB-Movie-DIR target ranges](src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py#L155-L234) and the [BoneAge-DIR target range](src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py#L237-L316).
+The reward implementation is available for the [AgeDB-DIR, IMDB-WIKI-DIR, and IMDB-Movie-DIR](src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py#L155-L234) and the [BoneAge-DIR](src/open-r1-multimodal/src/open_r1/vlm_modules/qwen_module.py#L237-L316).
 
 ## Data
 
